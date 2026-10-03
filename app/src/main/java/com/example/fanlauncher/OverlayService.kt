@@ -62,11 +62,10 @@ class OverlayService : Service() {
         }
 
         val density = resources.displayMetrics.density
-        val edgeWidthDp = 48
-        val edgeWidth = (edgeWidthDp * density).toInt()
+        val edgeWidthPx = (48 * density).toInt()
 
-        val edgeParams = WindowManager.LayoutParams(
-            edgeWidth * 2,
+        val params = WindowManager.LayoutParams(
+            edgeWidthPx,
             WindowManager.LayoutParams.MATCH_PARENT,
             type,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
@@ -77,33 +76,40 @@ class OverlayService : Service() {
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
         }
 
-        edgeRoot = FrameLayout(this)
-        edge = EdgeOverlayView(this).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
+        edge = EdgeOverlayView(
+            this,
+            onSwipeStart = { x, y -> showFan(x, y, type) },
+            onSwipeMove = { x, y -> fanView?.updateSelection(x, y) },
+            onSwipeEnd = { hideFan() }
+        )
+
+        edgeRoot = FrameLayout(this).apply {
+            addView(
+                edge,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
             )
         }
-        edgeRoot.addView(edge)
-        wm.addView(edgeRoot, edgeParams)
 
-        edge.onSwipeStart = { x, y -> showFan(x, y, type) }
-        edge.onSwipeMove = { x, y -> fanView?.updateSelection(x, y) }
-        edge.onSwipeEnd = { finishFan() }
+        wm.addView(edgeRoot, params)
     }
 
     private fun showFan(x: Float, y: Float, type: Int) {
         if (fanView != null) return
 
-        val fan = FanLauncherView(this)
-        fan.layoutParams = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT
-        )
-        fan.setCenter(resources.displayMetrics.widthPixels.toFloat(), y)
+        val fan = FanLauncherView(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+            setCenter(resources.displayMetrics.widthPixels.toFloat(), y)
+        }
 
-        fanRoot = FrameLayout(this)
-        fanRoot.addView(fan)
+        fanRoot = FrameLayout(this).apply {
+            addView(fan)
+        }
 
         val fanParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -119,10 +125,12 @@ class OverlayService : Service() {
 
         wm.addView(fanRoot, fanParams)
         fanView = fan
-        scope.launch { fan.items = buildItems() }
+        scope.launch {
+            fan.items = buildItems()
+        }
     }
 
-    private fun finishFan() {
+    private fun hideFan() {
         val fan = fanView ?: return
         val item = fan.consumeSelection()
         fanView = null
@@ -165,15 +173,22 @@ class OverlayService : Service() {
                     startActivity(it)
                 }
             }
+
             FanAction.Screenshot -> ScreenshotAccessibilityService.instance?.capture { bitmap ->
                 if (bitmap != null) saveScreenshot(bitmap)
                 else Toast.makeText(this, "スクリーンショットに失敗しました", Toast.LENGTH_SHORT).show()
             }
+
             FanAction.Translate -> {
                 ScreenshotAccessibilityService.instance?.capture { bitmap ->
                     if (bitmap != null) {
                         scope.launch {
-                            ScreenTranslator.translateAndOverlay(this@OverlayService, bitmap, wm, edgeRoot)
+                            ScreenTranslator.translateAndOverlay(
+                                this@OverlayService,
+                                bitmap,
+                                wm,
+                                edgeRoot
+                            )
                         }
                     }
                 }
@@ -187,18 +202,26 @@ class OverlayService : Service() {
                 put(MediaStore.Images.Media.DISPLAY_NAME, "fanlauncher_" + System.currentTimeMillis() + ".png")
                 put(MediaStore.Images.Media.MIME_TYPE, "image/png")
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/FanLauncher")
+                    put(
+                        MediaStore.Images.Media.RELATIVE_PATH,
+                        Environment.DIRECTORY_PICTURES + "/FanLauncher"
+                    )
                     put(MediaStore.Images.Media.IS_PENDING, 1)
                 }
             }
 
             val uri: Uri? = contentResolver.insert(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                values
             )
 
             if (uri == null) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(this@OverlayService, "スクリーンショットの保存に失敗しました", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@OverlayService,
+                        "スクリーンショットの保存に失敗しました",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
                 return@launch
             }
@@ -212,7 +235,9 @@ class OverlayService : Service() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 contentResolver.update(
                     uri,
-                    ContentValues().apply { put(MediaStore.Images.Media.IS_PENDING, 0) },
+                    ContentValues().apply {
+                        put(MediaStore.Images.Media.IS_PENDING, 0)
+                    },
                     null,
                     null
                 )
@@ -223,7 +248,8 @@ class OverlayService : Service() {
             withContext(Dispatchers.Main) {
                 Toast.makeText(
                     this@OverlayService,
-                    if (success) "スクリーンショットを保存しました" else "スクリーンショットの保存に失敗しました",
+                    if (success) "スクリーンショットを保存しました"
+                    else "スクリーンショットの保存に失敗しました",
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -231,8 +257,14 @@ class OverlayService : Service() {
     }
 
     private fun buildNotification(): Notification {
-        val channel = NotificationChannel("fan", "FanLauncher", NotificationManager.IMPORTANCE_LOW)
-        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            "fan",
+            "FanLauncher",
+            NotificationManager.IMPORTANCE_LOW
+        )
+        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
+            .createNotificationChannel(channel)
+
         return NotificationCompat.Builder(this, "fan")
             .setContentTitle("FanLauncher 稼働中")
             .setContentText("右端から左へスワイプでランチャーを開きます")

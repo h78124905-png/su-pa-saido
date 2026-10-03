@@ -9,76 +9,78 @@ import android.view.MotionEvent
 import android.view.View
 import kotlin.math.abs
 
-class EdgeOverlayView(context: Context) : View(context) {
+class EdgeOverlayView(
+    context: Context,
+    private val onSwipeStart: (Float, Float) -> Unit,
+    private val onSwipeMove: (Float, Float) -> Unit,
+    private val onSwipeEnd: () -> Unit
+) : View(context) {
+
+    private val density = resources.displayMetrics.density
+    private val edgeWidthPx = (48 * density).toInt()
+    private val showEdgeIndicator = true
+
     private var startX = 0f
     private var startY = 0f
     private var triggered = false
 
-    private val density = resources.displayMetrics.density
-    private val edgeWidthDp = 48
-    private val edgeWidth = (edgeWidthDp * density).toInt()
-    private val threshold = 24 * density
-    private val showEdgeIndicator = true
-    private val debugPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.argb(110, Color.RED, 0, 0)
+    private val indicatorPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0x60FF0000
     }
-
-    var onSwipeStart: ((Float, Float) -> Unit)? = null
-    var onSwipeMove: ((Float, Float) -> Unit)? = null
-    var onSwipeEnd: (() -> Unit)? = null
 
     init {
         setWillNotDraw(false)
+        isClickable = false
+        isFocusable = false
     }
 
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        updateExclusion(width)
-    }
-
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        updateExclusion(w)
+    override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+        super.onLayout(changed, l, t, r, b)
+        if (width == 0 || height == 0) return
+        systemGestureExclusionRects = listOf(Rect(0, 0, width, height))
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (showEdgeIndicator) {
-            val left = (width - edgeWidth).coerceAtLeast(0)
-            canvas.drawRect(left.toFloat(), 0f, width.toFloat(), height.toFloat(), debugPaint)
+            canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), indicatorPaint)
         }
-    }
-
-    private fun updateExclusion(w: Int) {
-        systemGestureExclusionRects = listOf(
-            Rect(0, 0, w, height)
-        )
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                if (event.x < width - edgeWidth) return false
                 startX = event.rawX
                 startY = event.rawY
                 triggered = false
                 return true
             }
+
             MotionEvent.ACTION_MOVE -> {
-                val dx = event.rawX - startX
-                val dy = abs(event.rawY - startY)
-                if (!triggered && dx < -threshold && dy < 200 * density) {
-                    triggered = true
-                    onSwipeStart?.invoke(event.rawX, event.rawY)
+                if (!triggered) {
+                    val dx = event.rawX - startX
+                    val dy = abs(event.rawY - startY)
+                    if (dx < -16 * density && dy < 200 * density) {
+                        triggered = true
+                        onSwipeStart(event.rawX, event.rawY)
+                    }
                 }
-                if (triggered) onSwipeMove?.invoke(event.rawX, event.rawY)
+
+                if (triggered) {
+                    onSwipeMove(event.rawX, event.rawY)
+                }
                 return true
             }
+
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                if (triggered) onSwipeEnd?.invoke()
+                if (triggered) {
+                    onSwipeEnd()
+                }
                 triggered = false
                 return true
             }
         }
-        return true
+
+        return false
     }
 }
