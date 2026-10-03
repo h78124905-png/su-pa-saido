@@ -40,17 +40,18 @@ object AppPickerDialog {
                         compoundDrawablePadding = 24
                         setCompoundDrawablesWithIntrinsicBounds(entries[position].icon, null, null, null)
                     }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 0.82f))
-                    row
+                    return row
                 }
             }
         }
 
+        val adapter = list.adapter
         list.setOnItemClickListener { _, _, position, _ ->
             val pkg = entries[position].pkg
             if (selected.contains(pkg)) selected.remove(pkg)
             else if (selected.size < max) selected.add(pkg)
             else Toast.makeText(context, "最大" + max + "個まで", Toast.LENGTH_SHORT).show()
-            list.adapter.notifyDataSetChanged()
+            (adapter as BaseAdapter).notifyDataSetChanged()
         }
 
         AlertDialog.Builder(context)

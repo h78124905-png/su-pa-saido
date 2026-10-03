@@ -29,10 +29,10 @@ class MainActivity : Activity() {
         refresh()
         root.addView(button("サービスを開始 / 再起動"){stopService(Intent(this,OverlayService::class.java));ContextCompat.startForegroundService(this,Intent(this,OverlayService::class.java));status.postDelayed(::refresh,500)})
         root.addView(label("エッジ設定"))
-        val ew=labelWithValue("エッジ幅","@@{s.edgeWidthDp}dp");root.addView(ew);root.addView(seekBar(16,96,s.edgeWidthDp){v->s=s.copy(edgeWidthDp=v);FanSettings.save(this,s);ew.text="エッジ幅: @@{v}dp"})
-        val top=labelWithValue("上端","@@{(s.edgeTopRatio*100).toInt()}%");root.addView(top);root.addView(seekBar(0,100,(s.edgeTopRatio*100).toInt()){v->val x=v/100f;if(x<s.edgeBottomRatio){s=s.copy(edgeTopRatio=x);FanSettings.save(this,s);top.text="上端: @@{v}%"}})
-        val bottom=labelWithValue("下端","@@{(s.edgeBottomRatio*100).toInt()}%");root.addView(bottom);root.addView(seekBar(0,100,(s.edgeBottomRatio*100).toInt()){v->val x=v/100f;if(x>s.edgeTopRatio){s=s.copy(edgeBottomRatio=x);FanSettings.save(this,s);bottom.text="下端: @@{v}%"}})
-        val st=labelWithValue("スワイプ閾値","@@{s.swipeThresholdDp}dp");root.addView(st);root.addView(seekBar(8,64,s.swipeThresholdDp){v->s=s.copy(swipeThresholdDp=v);FanSettings.save(this,s);st.text="スワイプ閾値: @@{v}dp"})
+        val ew=labelWithValue("エッジ幅","${s.edgeWidthDp}dp");root.addView(ew);root.addView(seekBar(16,96,s.edgeWidthDp){v->s=s.copy(edgeWidthDp=v);FanSettings.save(this,s);ew.text="エッジ幅: ${v}dp"})
+        val top=labelWithValue("上端","${(s.edgeTopRatio*100).toInt()}%");root.addView(top);root.addView(seekBar(0,100,(s.edgeTopRatio*100).toInt()){v->val x=v/100f;if(x<s.edgeBottomRatio){s=s.copy(edgeTopRatio=x);FanSettings.save(this,s);top.text="上端: ${v}%"})
+        val bottom=labelWithValue("下端","${(s.edgeBottomRatio*100).toInt()}%");root.addView(bottom);root.addView(seekBar(0,100,(s.edgeBottomRatio*100).toInt()){v->val x=v/100f;if(x>s.edgeTopRatio){s=s.copy(edgeBottomRatio=x);FanSettings.save(this,s);bottom.text="下端: ${v}%"})
+        val st=labelWithValue("スワイプ閾値","${s.swipeThresholdDp}dp");root.addView(st);root.addView(seekBar(8,64,s.swipeThresholdDp){v->s=s.copy(swipeThresholdDp=v);FanSettings.save(this,s);st.text="スワイプ閾値: ${v}dp"})
         root.addView(label("反応するエッジ"))
         val eg=RadioGroup(this);val left=RadioButton(this).apply{text="左";id=1001};val right=RadioButton(this).apply{text="右";id=1002};eg.addView(left);eg.addView(right);(if(s.edge==EdgeSide.LEFT)left else right).isChecked=true
         eg.setOnCheckedChangeListener{_,id->s=s.copy(edge=if(id==1001)EdgeSide.LEFT else EdgeSide.RIGHT);FanSettings.save(this,s)};root.addView(eg)
@@ -40,21 +40,21 @@ class MainActivity : Activity() {
         root.addView(label("扇設定"))
         val tg=RadioGroup(this);val one=RadioButton(this).apply{text="1段";id=2001};val two=RadioButton(this).apply{text="2段";id=2002};tg.addView(one);tg.addView(two);(if(s.tiers==1)one else two).isChecked=true
         tg.setOnCheckedChangeListener{_,id->s=s.copy(tiers=if(id==2001)1 else 2);FanSettings.save(this,s)};root.addView(tg)
-        val c1=labelWithValue("1段目アプリ数",s.tier1Count.toString());root.addView(c1);root.addView(seekBar(1,8,s.tier1Count){v->s=s.copy(tier1Count=v);FanSettings.save(this,s);c1.text="1段目アプリ数: @@{v}"})
-        val c2=labelWithValue("2段目アプリ数",s.tier2Count.toString());root.addView(c2);root.addView(seekBar(1,8,s.tier2Count){v->s=s.copy(tier2Count=v);FanSettings.save(this,s);c2.text="2段目アプリ数: @@{v}"})
-        root.addView(button("1段目のアプリを選択 (@@{s.tier1Apps.size})"){AppPickerDialog.show(this,s.tier1Apps,s.tier1Count){p->s=s.copy(tier1Apps=p);FanSettings.save(this,s)}})
-        root.addView(button("2段目のアプリを選択 (@@{s.tier2Apps.size})"){AppPickerDialog.show(this,s.tier2Apps,s.tier2Count){p->s=s.copy(tier2Apps=p);FanSettings.save(this,s)}})
+        val c1=labelWithValue("1段目アプリ数",s.tier1Count.toString());root.addView(c1);root.addView(seekBar(1,8,s.tier1Count){v->s=s.copy(tier1Count=v);FanSettings.save(this,s);c1.text="1段目アプリ数: ${v}"})
+        val c2=labelWithValue("2段目アプリ数",s.tier2Count.toString());root.addView(c2);root.addView(seekBar(1,8,s.tier2Count){v->s=s.copy(tier2Count=v);FanSettings.save(this,s);c2.text="2段目アプリ数: ${v}"})
+        root.addView(button("1段目のアプリを選択 (${s.tier1Apps.size})"){AppPickerDialog.show(this,s.tier1Apps,s.tier1Count){p->s=s.copy(tier1Apps=p);FanSettings.save(this,s)})
+        root.addView(button("2段目のアプリを選択 (${s.tier2Apps.size})"){AppPickerDialog.show(this,s.tier2Apps,s.tier2Count){p->s=s.copy(tier2Apps=p);FanSettings.save(this,s)})
         root.addView(checkBox("スクショボタン表示",s.showScreenshot){s=s.copy(showScreenshot=it);FanSettings.save(this,s)})
         root.addView(checkBox("翻訳ボタン表示",s.showTranslate){s=s.copy(showTranslate=it);FanSettings.save(this,s)})
         root.addView(button("設定を反映（サービス再起動）"){stopService(Intent(this,OverlayService::class.java));ContextCompat.startForegroundService(this,Intent(this,OverlayService::class.java));Toast.makeText(this,"設定を反映しました",Toast.LENGTH_SHORT).show()})
     }
-    private fun addPermissionRow(p:LinearLayout,n:String,g:Boolean,a:()->Unit){p.addView(TextView(this).apply{text=(if(g)"✅ "else"❌ ")+n;setPadding(0,dp(10),0,dp(10));setOnClickListener{a()}})}
+    private fun addPermissionRow(p:LinearLayout,n:String,g:Boolean,a:()->Unit){p.addView(TextView(this).apply{text=(if(g)"✅ "else"❌ ")+n;setPadding(0,dp(10),0,dp(10));setOnClickListener{a()})}
     private fun title(t:String)=TextView(this).apply{text=t;textSize=28f;setTextColor(Color.BLACK);setPadding(0,0,0,dp(20))}
     private fun label(t:String)=TextView(this).apply{text=t;textSize=18f;setTextColor(Color.rgb(25,118,210));setPadding(0,dp(28),0,dp(8))}
     private fun labelWithValue(n:String,v:String)=TextView(this).apply{text="$n: $v";setPadding(0,dp(10),0,dp(4))}
-    private fun button(t:String,a:()->Unit)=Button(this).apply{text=t;setOnClickListener{a()}}
-    private fun checkBox(t:String,c:Boolean,a:(Boolean)->Unit)=CheckBox(this).apply{text=t;isChecked=c;setOnCheckedChangeListener{_,v->a(v)}}
+    private fun button(t:String,a:()->Unit)=Button(this).apply{text=t;setOnClickListener{a()}
+    private fun checkBox(t:String,c:Boolean,a:(Boolean)->Unit)=CheckBox(this).apply{text=t;isChecked=c;setOnCheckedChangeListener{_,v->a(v)}
     private fun seekBar(min:Int,max:Int,current:Int,a:(Int)->Unit)=SeekBar(this).apply{this.max=max-min;progress=(current-min).coerceIn(0,max-min);setOnSeekBarChangeListener(object:SeekBar.OnSeekBarChangeListener{override fun onProgressChanged(sb:SeekBar?,p:Int,fromUser:Boolean){if(fromUser)a(p+min)};override fun onStartTrackingTouch(sb:SeekBar?)=Unit;override fun onStopTrackingTouch(sb:SeekBar?)=Unit})}
     private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
-    private fun isAccessibilityEnabled():Boolean{val enabled=Settings.Secure.getString(contentResolver,Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)?:return false;val target="$packageName/@@{ScreenshotAccessibilityService::class.java.name}";return enabled.split(":").any{it.equals(target,true)}}
+    private fun isAccessibilityEnabled():Boolean{val enabled=Settings.Secure.getString(contentResolver,Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)?:return false;val target="$packageName/${ScreenshotAccessibilityService::class.java.name}";return enabled.split(":").any{it.equals(target,true)}
 }

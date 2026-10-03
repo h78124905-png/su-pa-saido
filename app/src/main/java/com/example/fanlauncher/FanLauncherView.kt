@@ -5,7 +5,7 @@ import android.view.MotionEvent
 import android.view.View
 import kotlin.math.*
 class FanLauncherView(context:Context,private val settings:FanSettings):View(context){
- var tier1Items:List<FanItem>=emptyList();var tier2Items:List<FanItem>=emptyList();var onItemSelected:((FanItem)->Unit)?=null;var onDismissed:(()->Unit)?=null
+ var tier1Items:List<FanItem> = emptyList();var tier2Items:List<FanItem> = emptyList();var onItemSelected:((FanItem)->Unit)?=null;var onDismissed:(()->Unit)?=null
  private val sweepTotal=90f;private val startAngle=if(settings.edge==EdgeSide.RIGHT)180f else 270f;private var vertexX=0f;private var vertexY=0f
  private val tier1Radius=420f;private val tier2Radius=780f;private val iconSize=90f;private var selectedTier=0;private var selectedIndex=-1
  override fun onSizeChanged(w:Int,h:Int,ow:Int,oh:Int){vertexX=if(settings.edge==EdgeSide.RIGHT)w.toFloat() else 0f;vertexY=h/2f}
