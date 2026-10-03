@@ -1,6 +1,12 @@
 package com.example.fanlauncher
 
 import android.Manifest
+import android.app.AlertDialog as AndroidAlertDialog
+import android.graphics.*
+import android.graphics.drawable.Drawable
+import android.view.*
+import android.widget.*
+import kotlin.math.*
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -22,7 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.LocalTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -79,7 +85,7 @@ class MainActivity : ComponentActivity() {
                 extraLarge = RoundedCornerShape(38.dp)
             ),
             typography = Typography(
-                headlineMedium = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold),
+                headlineMedium = TextStyle(fontWeight = FontWeight.Bold),
                 titleLarge = LocalTextStyle.current.toTextStyle().copy(fontWeight = FontWeight.SemiBold),
                 bodyLarge = LocalTextStyle.current.toTextStyle().copy(fontSize = 16.sp)
             )
@@ -506,7 +512,7 @@ class FanSlotPickerView(
                 pm.getApplicationLabel(info).toString(), pm.getApplicationIcon(info))
         }
 
-        currentDialog = AlertDialog.Builder(context)
+        currentDialog = AndroidAlertDialog.Builder(context)
             .setTitle(tier.toString() + "段目・" + (index + 1) + "番")
             .setView(ScrollView(context).apply { addView(rows) })
             .setNegativeButton("閉じる", null)
