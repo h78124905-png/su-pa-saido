@@ -7,9 +7,9 @@ import kotlin.math.abs
 
 class EdgeOverlayView(context:Context,private val settings:FanSettings):View(context){
  var onSwipeStart:((Float,Float)->Unit)?=null;var onSwipeMove:((Float,Float)->Unit)?=null;var onSwipeEnd:(()->Unit)?=null
- private val density=resources.displayMetrics.density;private var startX=0f;private var startY=0f;private var tracking=false;private var triggered=false
+ private val density=resources.displayMetrics.density;private var fullHeightMode=false;private var startX=0f;private var startY=0f;private var tracking=false;private var triggered=false
  init{setWillNotDraw(false);isClickable=false;isFocusable=false}
- private fun topPx()=(height*settings.edgeTopRatio).toInt().coerceIn(0,height);private fun bottomPx()=(height*settings.edgeBottomRatio).toInt().coerceIn(topPx(),height)
+ fun setFullHeightMode(enabled:Boolean){fullHeightMode=enabled;requestLayout();invalidate()};private fun topPx()=if(fullHeightMode)(height*settings.edgeTopRatio).toInt().coerceIn(0,height)else 0;private fun bottomPx()=if(fullHeightMode)(height*settings.edgeBottomRatio).toInt().coerceIn(topPx(),height)else height
  override fun onLayout(c:Boolean,l:Int,t:Int,r:Int,b:Int){super.onLayout(c,l,t,r,b);if(width==0||height==0)return;systemGestureExclusionRects=listOf(Rect(0,topPx(),width,bottomPx()))}
  override fun onDraw(c:Canvas){if(!settings.showEdgeIndicator)return;val p=Paint(Paint.ANTI_ALIAS_FLAG).apply{color=0x66FFFFFF};c.drawRect(0f,topPx().toFloat(),width.toFloat(),bottomPx().toFloat(),p)}
  override fun onTouchEvent(e:MotionEvent):Boolean{
