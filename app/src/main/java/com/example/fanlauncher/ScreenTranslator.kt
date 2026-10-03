@@ -36,7 +36,7 @@ object ScreenTranslator{
   }catch(_:Throwable){TranslationOverlay.show(context,wm,emptyList())}finally{tr.close()}
  }
  private fun norm(t:String)=when{t.startsWith("zh",true)->"zh";t.startsWith("ja",true)->"ja";t.startsWith("ko",true)->"ko";else->t}
- private suspend fun recognize(bitmap:Bitmap):List<Pair<Int,Text>>=coroutineScope{
+ private suspend fun recognize(bitmap:Bitmap):List<Pair<Int, Text>> = coroutineScope{
   val input=InputImage.fromBitmap(bitmap,0)
   val z=runCatching{zh.process(input).await()}.getOrNull()
   if(z?.text?.any{it in '\u4e00'..'\u9fff'}==true)return@coroutineScope listOf(1 to z)
