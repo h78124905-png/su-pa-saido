@@ -22,8 +22,22 @@ import androidx.core.content.ContextCompat
 
 class MainActivity : Activity() {
     private lateinit var s: FanSettings
+    private var settingsBuilt = false
     private lateinit var picker: FanSlotPickerView
-    override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); buildSettingsHome() }
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        buildSettingsHome()
+        settingsBuilt = true
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (settingsBuilt) buildSettingsHome()
+        val prefs = getSharedPreferences("guide", MODE_PRIVATE)
+        if (!prefs.getBoolean("shown", false)) {
+            window.decorView.postDelayed({ showSetupGuide() }, 350)
+        }
+    }
     private fun buildSettingsHome() {
         s = FanSettings.load(this)
 
@@ -148,13 +162,6 @@ class MainActivity : Activity() {
             s = s.copy(tier1Count = v); FanSettings.save(this, s)
             c1.text = "1段目アプリ数: " + v; picker.updateSettings(s); OverlayService.instance?.applySettings()
         })
-        val c2 = labelWithValue("2段目アプリ数", s.tier2Count.toString())
-        root.addView(c2)
-        root.addView(seekBar(1, 16, s.tier2Count) { v ->
-            s = s.copy(tier2Count = v); FanSettings.save(this, s)
-            c2.text = "2段目アプリ数: " + v; picker.updateSettings(s); OverlayService.instance?.applySettings()
-        })
-
         root.addView(divider())
         root.addView(label("アプリ配置"))
         root.addView(TextView(this).apply {
@@ -193,6 +200,46 @@ class MainActivity : Activity() {
             setTextColor(Color.DKGRAY)
             setPadding(0, dp(12), 0, 0)
         })
+    }
+
+    private fun showSetupGuide() {
+        getSharedPreferences("guide", MODE_PRIVATE).edit().putBoolean("shown", true).apply()
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(4), dp(18), 0)
+        }
+        box.addView(TextView(this).apply {
+            text = "FanLauncherを使うには、最初に次の設定を確認してください。"
+            textSize = 15f
+            setTextColor(0xFF303236.toInt())
+            setPadding(0, 0, 0, dp(12))
+        })
+        box.addView(Button(this).apply {
+            text = "① 他のアプリの上に表示"
+            setOnClickListener { openOverlaySettings() }
+        })
+        box.addView(Button(this).apply {
+            text = "② アクセシビリティ"
+            setOnClickListener { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
+        })
+        if (Build.VERSION.SDK_INT >= 33) {
+            box.addView(Button(this).apply {
+                text = "③ 通知"
+                setOnClickListener {
+                    requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 100)
+                }
+            })
+        }
+        AlertDialog.Builder(this)
+            .setTitle("はじめに")
+            .setView(box)
+            .setPositiveButton("閉じる", null)
+            .setNegativeButton("あとで", null)
+            .show()
+    }
+
+    private fun openOverlaySettings() {
+        startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + packageName)))
     }
 
     private fun addPermissionRow(p:LinearLayout,n:String,g:Boolean,a:()->Unit){p.addView(TextView(this).apply{text=(if(g) "✅ " else "❌ ")+n;setPadding(0,dp(10),0,dp(10));setOnClickListener{a()}})}
