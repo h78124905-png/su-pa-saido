@@ -62,7 +62,8 @@ class OverlayService : Service() {
         }
 
         val density = resources.displayMetrics.density
-        val edgeWidth = (48 * density).toInt()
+        val edgeWidthDp = 48
+        val edgeWidth = (edgeWidthDp * density).toInt()
 
         val edgeParams = WindowManager.LayoutParams(
             edgeWidth * 2,

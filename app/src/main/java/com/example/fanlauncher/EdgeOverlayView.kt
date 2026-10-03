@@ -1,6 +1,9 @@
 package com.example.fanlauncher
 
 import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.graphics.Rect
 import android.view.MotionEvent
 import android.view.View
@@ -12,12 +15,21 @@ class EdgeOverlayView(context: Context) : View(context) {
     private var triggered = false
 
     private val density = resources.displayMetrics.density
-    private val edgeWidth = (48 * density).toInt()
+    private val edgeWidthDp = 48
+    private val edgeWidth = (edgeWidthDp * density).toInt()
     private val threshold = 24 * density
+    private val showEdgeIndicator = true
+    private val debugPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.argb(110, Color.RED, 0, 0)
+    }
 
     var onSwipeStart: ((Float, Float) -> Unit)? = null
     var onSwipeMove: ((Float, Float) -> Unit)? = null
     var onSwipeEnd: (() -> Unit)? = null
+
+    init {
+        setWillNotDraw(false)
+    }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
@@ -28,9 +40,17 @@ class EdgeOverlayView(context: Context) : View(context) {
         updateExclusion(w)
     }
 
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        if (showEdgeIndicator) {
+            val left = (width - edgeWidth).coerceAtLeast(0)
+            canvas.drawRect(left.toFloat(), 0f, width.toFloat(), height.toFloat(), debugPaint)
+        }
+    }
+
     private fun updateExclusion(w: Int) {
         systemGestureExclusionRects = listOf(
-            Rect((w - edgeWidth).coerceAtLeast(0), 0, w, height)
+            Rect(0, 0, w, height)
         )
     }
 
