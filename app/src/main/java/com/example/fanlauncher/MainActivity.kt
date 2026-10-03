@@ -3,6 +3,7 @@ package com.example.fanlauncher
 import android.Manifest
 import android.app.AlertDialog as AndroidAlertDialog
 import android.graphics.*
+import android.graphics.Color as AndroidColor
 import android.graphics.drawable.Drawable
 import android.view.*
 import android.widget.*
@@ -86,8 +87,8 @@ class MainActivity : ComponentActivity() {
             ),
             typography = Typography(
                 headlineMedium = TextStyle(fontWeight = FontWeight.Bold),
-                titleLarge = LocalTextStyle.current.toTextStyle().copy(fontWeight = FontWeight.SemiBold),
-                bodyLarge = LocalTextStyle.current.toTextStyle().copy(fontSize = 16.sp)
+                titleLarge = TextStyle(fontWeight = FontWeight.SemiBold),
+                bodyLarge = TextStyle(fontSize = 16.sp)
             )
         ) {
             Scaffold(
@@ -342,7 +343,7 @@ class FanSlotPickerView(
     private var previewRadius = 0f
     private var selectedTier = 1
     private var selectedSlot = -1
-    private var currentDialog: AlertDialog? = null
+    private var currentDialog: AndroidAlertDialog? = null
 
     init {
         isClickable = true
@@ -380,7 +381,7 @@ class FanSlotPickerView(
         drawCenterActions(c)
 
         paint.style = android.graphics.Paint.Style.FILL
-        paint.color = Color.DKGRAY
+        paint.color = AndroidColor.DKGRAY
         paint.textAlign = android.graphics.Paint.Align.CENTER
         paint.textSize = dp(12).toFloat()
         c.drawText(if (settings.edge == EdgeSide.RIGHT) "右端から開く" else "左端から開く",
@@ -462,7 +463,7 @@ class FanSlotPickerView(
             c.drawCircle(centerX, centerY - dp(24), dp(20).toFloat(), paint)
             paint.color = 0xFF00897B.toInt()
             c.drawCircle(centerX, centerY + dp(24), dp(20).toFloat(), paint)
-            paint.color = Color.WHITE; paint.textSize = dp(9).toFloat()
+            paint.color = AndroidColor.WHITE; paint.textSize = dp(9).toFloat()
             c.drawText("写真", centerX, centerY - dp(21), paint)
             c.drawText("翻訳", centerX, centerY + dp(27), paint)
         } else {
