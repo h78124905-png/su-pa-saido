@@ -43,7 +43,11 @@ class FanLauncherView @JvmOverloads constructor(
     }
 
     fun updateSelection(rawX: Float, rawY: Float) {
-        selectedIndex = computeSector(rawX, rawY)
+        val loc = IntArray(2)
+        getLocationOnScreen(loc)
+        val localX = rawX - loc[0]
+        val localY = rawY - loc[1]
+        selectedIndex = computeSector(localX, localY)
         invalidate()
     }
 
