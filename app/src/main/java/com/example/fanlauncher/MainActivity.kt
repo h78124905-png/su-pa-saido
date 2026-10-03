@@ -2,6 +2,7 @@ package com.example.fanlauncher
 import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -57,6 +58,10 @@ class MainActivity : Activity() {
     private fun checkBox(t:String,c:Boolean,a:(Boolean)->Unit)=CheckBox(this).apply{text=t;isChecked=c;setOnCheckedChangeListener{_,v->a(v)}}
     private fun seekBar(min:Int,max:Int,current:Int,a:(Int)->Unit)=SeekBar(this).apply{this.max=max-min;progress=(current-min).coerceIn(0,max-min);setOnSeekBarChangeListener(object:SeekBar.OnSeekBarChangeListener{override fun onProgressChanged(sb:SeekBar?,p:Int,fromUser:Boolean){if(fromUser)a(p+min)};override fun onStartTrackingTouch(sb:SeekBar?)=Unit;override fun onStopTrackingTouch(sb:SeekBar?)=Unit})}
     private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
-    private fun isAccessibilityEnabled():Boolean{return ScreenshotAccessibilityService.instance!=null}
+    private fun isAccessibilityEnabled():Boolean{
+        val enabled=Settings.Secure.getString(contentResolver,Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)?:return false
+        val target=ComponentName(this,ScreenshotAccessibilityService::class.java).flattenToString()
+        return enabled.split(':').any{it.equals(target,true)}
+    }
 }
 class FanSlotPickerView(context:android.content.Context,var slotCount:Int,var selected:List<String>,val onChanged:(List<String>)->Unit):LinearLayout(context){private val apps=context.packageManager.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER),0).map{it.activityInfo.applicationInfo}.distinctBy{it.packageName}.filter{it.packageName!=context.packageName}.sortedBy{context.packageManager.getApplicationLabel(it).toString()};init{orientation=HORIZONTAL;setPadding(0,8,0,8);rebuild()};fun setCount(n:Int){slotCount=n;rebuild()};private fun rebuild(){removeAllViews();for(i in 0 until slotCount){val b=Button(context);b.text=selected.getOrNull(i)?.let{context.packageManager.getApplicationLabel(context.packageManager.getApplicationInfo(it,0)).toString()}?:"＋ アプリ";b.setOnClickListener{val names=apps.map{context.packageManager.getApplicationLabel(it).toString()};AlertDialog.Builder(context).setTitle("スロット "+(i+1)).setItems(names.toTypedArray()){_,which->val p=selected.toMutableList();while(p.size<=i)p.add("");p[i]=apps[which].packageName;selected=p;onChanged(p.filter{it.isNotEmpty()});rebuild()}.setNegativeButton("キャンセル",null).show()};addView(b,LinearLayout.LayoutParams(0,dp(72),1f))}};private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()}
