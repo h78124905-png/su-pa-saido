@@ -203,6 +203,7 @@ class MainActivity : Activity() {
     }
 
     private fun showSetupGuide() {
+        getSharedPreferences("guide", MODE_PRIVATE).edit().putBoolean("shown", true).apply()
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(18), dp(4), dp(18), 0)
@@ -232,9 +233,7 @@ class MainActivity : Activity() {
         AlertDialog.Builder(this)
             .setTitle("はじめに")
             .setView(box)
-            .setPositiveButton("閉じる") { _, _ ->
-                getSharedPreferences("guide", MODE_PRIVATE).edit().putBoolean("shown", true).apply()
-            }
+            .setPositiveButton("閉じる", null)
             .setNegativeButton("あとで", null)
             .show()
     }
