@@ -236,7 +236,7 @@ class FanSlotPickerView(
 
     override fun onSizeChanged(w: Int, h: Int, oldW: Int, oldH: Int) {
         // 実際のfanRadiusDpとは無関係。2段目まで必ず画面内に収まる固定プレビュー。
-        previewRadius = min(w * 0.20f, h * 0.31f).coerceAtLeast(dp(60).toFloat())
+        previewRadius = minOf(w * 0.20f, h * 0.31f).coerceAtLeast(dp(60).toFloat())
         vertexX = if (settings.edge == EdgeSide.RIGHT) w - dp(24).toFloat() else dp(24).toFloat()
         vertexY = h * 0.52f
     }
@@ -326,7 +326,7 @@ class FanSlotPickerView(
         if (settings.showTranslate) actions += "翻訳"
         if (actions.isEmpty()) return
 
-        val centerX = vertexX + (if (settings.edge == EdgeSide.RIGHT) -1 else 1) * min(dp(30).toFloat(), previewRadius * .28f)
+        val centerX = vertexX + (if (settings.edge == EdgeSide.RIGHT) -1 else 1) * minOf(dp(30).toFloat(), previewRadius * .28f)
         val centerY = vertexY
 
         if (actions.size == 2) {
