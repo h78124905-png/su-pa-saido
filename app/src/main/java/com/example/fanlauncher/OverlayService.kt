@@ -31,7 +31,7 @@ class OverlayService:Service(){
              Toast.makeText(this,"スクリーンショットを開始できませんでした",Toast.LENGTH_SHORT).show()
          }
        }
-       FanAction.OpenAppList->{val service=ScreenshotAccessibilityService.instance;if(service==null){Toast.makeText(this,"アクセシビリティを有効にしてください",Toast.LENGTH_SHORT).show()}else service.openAppList()}
+       FanAction.CloseFan->Unit
        FanAction.Empty->Unit
        FanAction.Translate->{
          val service=ScreenshotAccessibilityService.instance
