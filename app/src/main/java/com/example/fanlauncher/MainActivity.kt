@@ -1,262 +1,317 @@
 package com.example.fanlauncher
+
 import android.Manifest
-import android.app.Activity
-import android.app.AlertDialog
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Color
-import android.graphics.drawable.Drawable
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.view.Gravity
-import android.view.View
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.hypot
-import kotlin.math.sin
 import android.provider.Settings
-import android.widget.*
+import android.net.Uri
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.delay
 
-class MainActivity : Activity() {
-    private lateinit var s: FanSettings
-    private var settingsBuilt = false
-    private lateinit var picker: FanSlotPickerView
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        buildSettingsHome()
-        settingsBuilt = true
+        setContent { FanLauncherSettings() }
     }
 
-    override fun onResume() {
-        super.onResume()
-        if (settingsBuilt) buildSettingsHome()
-        val prefs = getSharedPreferences("guide", MODE_PRIVATE)
-        if (!prefs.getBoolean("shown", false)) {
-            window.decorView.postDelayed({ showSetupGuide() }, 350)
+    @Composable
+    private fun FanLauncherSettings() {
+        val context = LocalContext.current
+        var settings by remember { mutableStateOf(FanSettings.load(context)) }
+        var serviceRunning by remember { mutableStateOf(OverlayService.isRunning) }
+        var overlayGranted by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
+        var accessibilityGranted by remember { mutableStateOf(isAccessibilityEnabled()) }
+        var notificationGranted by remember {
+            mutableStateOf(Build.VERSION.SDK_INT < 33 ||
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)
         }
-    }
-    private fun buildSettingsHome() {
-        s = FanSettings.load(this)
+        var showGuide by remember { mutableStateOf(false) }
 
-        val scroll = ScrollView(this)
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(20), dp(20), dp(40))
+        fun save(next: FanSettings) {
+            settings = next
+            FanSettings.save(context, next)
+            OverlayService.instance?.applySettings()
         }
-        scroll.addView(root)
-        setContentView(scroll)
 
-        root.addView(title("FanLauncher"))
-        root.addView(label("権限ステータス"))
-        addPermissionRow(root, "オーバーレイ", Settings.canDrawOverlays(this)) {
-            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + packageName)))
-        }
-        addPermissionRow(root, "アクセシビリティ", isAccessibilityEnabled()) {
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-        }
-        if (Build.VERSION.SDK_INT >= 33) {
-            addPermissionRow(root, "通知", checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 100)
+        LaunchedEffect(Unit) {
+            while (true) {
+                serviceRunning = OverlayService.isRunning
+                overlayGranted = Settings.canDrawOverlays(context)
+                accessibilityGranted = isAccessibilityEnabled()
+                notificationGranted = Build.VERSION.SDK_INT < 33 ||
+                    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+                val prefs = context.getSharedPreferences("guide", MODE_PRIVATE)
+                if (!prefs.getBoolean("shown", false)) showGuide = true
+                delay(800)
             }
         }
 
-        root.addView(label("サービス"))
-        val status = TextView(this).apply { setPadding(0, dp(8), 0, dp(8)) }
-        root.addView(status)
-        fun refresh() {
-            val running = OverlayService.isRunning
-            status.text = if (running) "OverlayService: 稼働中" else "OverlayService: 停止中"
-            status.setTextColor(if (running) Color.rgb(0, 120, 70) else Color.RED)
-        }
-        refresh()
-        root.addView(button("サービスを開始 / 再起動") {
-            stopService(Intent(this, OverlayService::class.java))
-            ContextCompat.startForegroundService(this, Intent(this, OverlayService::class.java))
-            status.postDelayed(::refresh, 500)
-        })
-
-        root.addView(label("エッジ設定"))
-        val ew = labelWithValue("エッジ幅", s.edgeWidthDp.toString() + "dp")
-        root.addView(ew)
-        root.addView(seekBar(16, 96, s.edgeWidthDp) { v ->
-            s = s.copy(edgeWidthDp = v); FanSettings.save(this, s)
-            ew.text = "エッジ幅: " + v + "dp"; OverlayService.instance?.applySettings()
-        })
-        val top = labelWithValue("上端", (s.edgeTopRatio * 100).toInt().toString() + "%")
-        root.addView(top)
-        root.addView(seekBar(0, 100, (s.edgeTopRatio * 100).toInt()) { v ->
-            val x = v / 100f
-            if (x < s.edgeBottomRatio) {
-                s = s.copy(edgeTopRatio = x); FanSettings.save(this, s)
-                top.text = "上端: " + v + "%"; OverlayService.instance?.applySettings()
-            }
-        })
-        val bottom = labelWithValue("下端", (s.edgeBottomRatio * 100).toInt().toString() + "%")
-        root.addView(bottom)
-        root.addView(seekBar(0, 100, (s.edgeBottomRatio * 100).toInt()) { v ->
-            val x = v / 100f
-            if (x > s.edgeTopRatio) {
-                s = s.copy(edgeBottomRatio = x); FanSettings.save(this, s)
-                bottom.text = "下端: " + v + "%"; OverlayService.instance?.applySettings()
-            }
-        })
-        val st = labelWithValue("スワイプ閾値", s.swipeThresholdDp.toString() + "dp")
-        root.addView(st)
-        root.addView(seekBar(8, 64, s.swipeThresholdDp) { v ->
-            s = s.copy(swipeThresholdDp = v); FanSettings.save(this, s)
-            st.text = "スワイプ閾値: " + v + "dp"; OverlayService.instance?.applySettings()
-        })
-
-        root.addView(label("反応するエッジ"))
-        val eg = RadioGroup(this)
-        val left = RadioButton(this).apply { text = "左"; id = 1001 }
-        val right = RadioButton(this).apply { text = "右"; id = 1002 }
-        eg.addView(left); eg.addView(right)
-        (if (s.edge == EdgeSide.LEFT) left else right).isChecked = true
-        eg.setOnCheckedChangeListener { _, id ->
-            s = s.copy(edge = if (id == 1001) EdgeSide.LEFT else EdgeSide.RIGHT)
-            FanSettings.save(this, s); picker.updateSettings(s); OverlayService.instance?.applySettings()
-        }
-        root.addView(eg)
-        root.addView(checkBox("エッジ判定位置を表示", s.showEdgeIndicator) {
-            s = s.copy(showEdgeIndicator = it); FanSettings.save(this, s); OverlayService.instance?.applySettings()
-        })
-
-        root.addView(label("扇設定"))
-        val sweep = labelWithValue("扇の開き角", s.fanSweepDeg.toString() + "°")
-        root.addView(sweep)
-        root.addView(seekBar(90, 180, s.fanSweepDeg) { v ->
-            s = s.copy(fanSweepDeg = v); FanSettings.save(this, s)
-            sweep.text = "扇の開き角: " + v + "°"; picker.updateSettings(s); OverlayService.instance?.applySettings()
-        })
-        val radius = labelWithValue("扇のサイズ", s.fanRadiusDp.toString() + "dp")
-        root.addView(radius)
-        root.addView(seekBar(160, 420, s.fanRadiusDp) { v ->
-            s = s.copy(fanRadiusDp = v); FanSettings.save(this, s)
-            radius.text = "扇のサイズ: " + v + "dp"
-            // 設定画面のプレビューは固定サイズ。実際の扇だけを変更する。
-            OverlayService.instance?.applySettings()
-        })
-
-        root.addView(label("段数"))
-        root.addView(TextView(this).apply {
-            text = "1段目は常に使用。2段目だけオン / オフできます。"
-            setTextColor(Color.DKGRAY)
-        })
-        val tier2 = Switch(this).apply {
-            text = "2段目を使用"
-            isChecked = s.tiers == 2
-        }
-        root.addView(tier2)
-        tier2.setOnCheckedChangeListener { _, checked ->
-            s = s.copy(tiers = if (checked) 2 else 1)
-            FanSettings.save(this, s); picker.updateSettings(s); OverlayService.instance?.applySettings()
-        }
-
-        val c1 = labelWithValue("1段目アプリ数", s.tier1Count.toString())
-        root.addView(c1)
-        root.addView(seekBar(1, 16, s.tier1Count) { v ->
-            s = s.copy(tier1Count = v); FanSettings.save(this, s)
-            c1.text = "1段目アプリ数: " + v; picker.updateSettings(s); OverlayService.instance?.applySettings()
-        })
-        root.addView(divider())
-        root.addView(label("アプリ配置"))
-        root.addView(TextView(this).apply {
-            text = "下のランチャーUIをそのままプレビュー表示します。\n内側＝1段目 / 外側＝2段目。スロットをタップしてアプリを選択します。"
-            setTextColor(Color.DKGRAY)
-            setPadding(0, 0, 0, dp(8))
-        })
-
-        picker = FanSlotPickerView(this, s) { updated ->
-            s = updated
-            FanSettings.save(this, s)
-            OverlayService.instance?.applySettings()
-        }
-        root.addView(picker, LinearLayout.LayoutParams(-1, dp(340)))
-
-        root.addView(checkBox("設定画面にランチャーUIを表示", true) {
-            picker.visibility = if (it) View.VISIBLE else View.GONE
-        })
-
-        root.addView(label("中央ボタン"))
-        val actionRadius = labelWithValue("中央ボタン領域", s.actionRadiusDp.toString() + "dp")
-        root.addView(actionRadius)
-        root.addView(seekBar(40, 220, s.actionRadiusDp) { v ->
-            s = s.copy(actionRadiusDp = v); FanSettings.save(this, s)
-            actionRadius.text = "中央ボタン領域: " + v + "dp"
-            OverlayService.instance?.applySettings()
-        })
-        root.addView(checkBox("スクショボタン表示", s.showScreenshot) {
-            s = s.copy(showScreenshot = it); FanSettings.save(this, s); picker.updateSettings(s); OverlayService.instance?.applySettings()
-        })
-        root.addView(checkBox("翻訳ボタン表示", s.showTranslate) {
-            s = s.copy(showTranslate = it); FanSettings.save(this, s); picker.updateSettings(s); OverlayService.instance?.applySettings()
-        })
-        root.addView(TextView(this).apply {
-            text = "設定は変更した瞬間に保存・反映されます。プレビューの大きさは実際の扇サイズとは独立しています。"
-            setTextColor(Color.DKGRAY)
-            setPadding(0, dp(12), 0, 0)
-        })
-    }
-
-    private fun showSetupGuide() {
-        getSharedPreferences("guide", MODE_PRIVATE).edit().putBoolean("shown", true).apply()
-        val box = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(4), dp(18), 0)
-        }
-        box.addView(TextView(this).apply {
-            text = "FanLauncherを使うには、最初に次の設定を確認してください。"
-            textSize = 15f
-            setTextColor(0xFF303236.toInt())
-            setPadding(0, 0, 0, dp(12))
-        })
-        box.addView(Button(this).apply {
-            text = "① 他のアプリの上に表示"
-            setOnClickListener { openOverlaySettings() }
-        })
-        box.addView(Button(this).apply {
-            text = "② アクセシビリティ"
-            setOnClickListener { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
-        })
-        if (Build.VERSION.SDK_INT >= 33) {
-            box.addView(Button(this).apply {
-                text = "③ 通知"
-                setOnClickListener {
-                    requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 100)
+        MaterialTheme(
+            colorScheme = expressiveLightColors(),
+            shapes = Shapes(
+                extraSmall = RoundedCornerShape(8.dp),
+                small = RoundedCornerShape(14.dp),
+                medium = RoundedCornerShape(22.dp),
+                large = RoundedCornerShape(30.dp),
+                extraLarge = RoundedCornerShape(38.dp)
+            ),
+            typography = Typography(
+                headlineMedium = LocalTextStyle.current.toTextStyle().copy(fontWeight = FontWeight.Bold),
+                titleLarge = LocalTextStyle.current.toTextStyle().copy(fontWeight = FontWeight.SemiBold),
+                bodyLarge = LocalTextStyle.current.toTextStyle().copy(fontSize = 16.sp)
+            )
+        ) {
+            Scaffold(
+                topBar = {
+                    LargeTopAppBar(
+                        title = {
+                            Column {
+                                Text("FanLauncher", fontWeight = FontWeight.Bold)
+                                Text("自分だけの扇ランチャー", style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        },
+                        navigationIcon = {
+                            Icon(Icons.Default.Widgets, contentDescription = null,
+                                modifier = Modifier.padding(start = 16.dp))
+                        }
+                    )
                 }
-            })
+            ) { padding ->
+                Column(
+                    Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())
+                        .padding(horizontal = 18.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    ExpressiveSectionCard("状態", Icons.Default.Verified) {
+                        PermissionRow("オーバーレイ", overlayGranted, "他のアプリの上に扇を表示します") {
+                            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+                        }
+                        PermissionRow("アクセシビリティ", accessibilityGranted, "スクショと画面翻訳に使用します") {
+                            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                        }
+                        if (Build.VERSION.SDK_INT >= 33) {
+                            PermissionRow("通知", notificationGranted, "バックグラウンド動作の通知を表示します") {
+                                requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 100)
+                            }
+                        }
+                        HorizontalDivider(Modifier.padding(vertical = 6.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            AssistChip(
+                                onClick = {},
+                                label = { Text(if (serviceRunning) "稼働中" else "停止中") },
+                                leadingIcon = { Icon(if (serviceRunning) Icons.Default.CheckCircle else Icons.Default.PauseCircle, null) }
+                            )
+                            Button(onClick = {
+                                context.stopService(Intent(context, OverlayService::class.java))
+                                ContextCompat.startForegroundService(context, Intent(context, OverlayService::class.java))
+                            }) { Text("再起動") }
+                        }
+                    }
+
+                    ExpressiveSectionCard("エッジ", Icons.Default.Swipe) {
+                        ValueSlider("反応幅", settings.edgeWidthDp, 16, 96, "dp") {
+                            save(settings.copy(edgeWidthDp = it))
+                        }
+                        ValueSlider("上端", (settings.edgeTopRatio * 100).toInt(), 0, 99, "%") {
+                            val x = it / 100f
+                            if (x < settings.edgeBottomRatio) save(settings.copy(edgeTopRatio = x))
+                        }
+                        ValueSlider("下端", (settings.edgeBottomRatio * 100).toInt(), 1, 100, "%") {
+                            val x = it / 100f
+                            if (x > settings.edgeTopRatio) save(settings.copy(edgeBottomRatio = x))
+                        }
+                        ValueSlider("スワイプ閾値", settings.swipeThresholdDp, 8, 64, "dp") {
+                            save(settings.copy(swipeThresholdDp = it))
+                        }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilterChip(selected = settings.edge == EdgeSide.LEFT, onClick = { save(settings.copy(edge = EdgeSide.LEFT)) }, label = { Text("左端") })
+                            FilterChip(selected = settings.edge == EdgeSide.RIGHT, onClick = { save(settings.copy(edge = EdgeSide.RIGHT)) }, label = { Text("右端") })
+                        }
+                        SettingSwitch("エッジ判定位置を表示", settings.showEdgeIndicator) {
+                            save(settings.copy(showEdgeIndicator = it))
+                        }
+                    }
+
+                    ExpressiveSectionCard("扇のデザイン", Icons.Default.PieChart) {
+                        ValueSlider("開き角", settings.fanSweepDeg, 90, 180, "°") {
+                            save(settings.copy(fanSweepDeg = it))
+                        }
+                        ValueSlider("扇のサイズ", settings.fanRadiusDp, 160, 420, "dp") {
+                            save(settings.copy(fanRadiusDp = it))
+                        }
+                        ValueSlider("中央アクション領域", settings.actionRadiusDp, 40, 220, "dp") {
+                            save(settings.copy(actionRadiusDp = it))
+                        }
+                    }
+
+                    ExpressiveSectionCard("アプリ配置", Icons.Default.Apps) {
+                        Text("スロットをタップするとアプリを選べます。空きスロットもそのまま残ります。",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text("2段目", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                            Switch(checked = settings.tiers == 2, onCheckedChange = {
+                                save(settings.copy(tiers = if (it) 2 else 1))
+                            })
+                        }
+                        ValueSlider("1段目のスロット", settings.tier1Count, 1, 16, "個") {
+                            save(settings.copy(tier1Count = it))
+                        }
+                        if (settings.tiers == 2) {
+                            ValueSlider("2段目のスロット", settings.tier2Count, 1, 16, "個") {
+                                save(settings.copy(tier2Count = it))
+                            }
+                        }
+                        AndroidView(
+                            factory = { FanSlotPickerView(it, settings) { save(it) } },
+                            update = { it.updateSettings(settings) },
+                            modifier = Modifier.fillMaxWidth().height(360.dp)
+                        )
+                    }
+
+                    ExpressiveSectionCard("中央アクション", Icons.Default.TouchApp) {
+                        SettingSwitch("スクリーンショット", settings.showScreenshot) {
+                            save(settings.copy(showScreenshot = it))
+                        }
+                        SettingSwitch("画面翻訳", settings.showTranslate) {
+                            save(settings.copy(showTranslate = it))
+                        }
+                    }
+
+                    ExpressiveSectionCard("使い方", Icons.Default.Info) {
+                        Text("エッジの灰色エリアから内側へスワイプすると扇が開きます。扇の外側へ指を動かしても、開始位置が有効なら操作は継続します。",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Spacer(Modifier.height(24.dp))
+                }
+            }
         }
-        AlertDialog.Builder(this)
-            .setTitle("はじめに")
-            .setView(box)
-            .setPositiveButton("閉じる", null)
-            .setNegativeButton("あとで", null)
-            .show()
+
+        if (showGuide) {
+            AlertDialog(
+                onDismissRequest = {
+                    context.getSharedPreferences("guide", MODE_PRIVATE).edit().putBoolean("shown", true).apply()
+                    showGuide = false
+                },
+                icon = { Icon(Icons.Default.AutoAwesome, null) },
+                title = { Text("FanLauncherをはじめよう") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("最初に3つの権限を設定すると、扇ランチャーの機能を使えます。")
+                        Text("① オーバーレイ：扇を他のアプリの上に表示")
+                        Text("② アクセシビリティ：スクショと画面翻訳")
+                        Text("③ 通知：バックグラウンド動作を安定させるため")
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        context.getSharedPreferences("guide", MODE_PRIVATE).edit().putBoolean("shown", true).apply()
+                        showGuide = false
+                    }) { Text("閉じる") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showGuide = false }) { Text("あとで") }
+                }
+            )
+        }
     }
 
-    private fun openOverlaySettings() {
-        startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + packageName)))
+    @Composable
+    private fun expressiveLightColors() = if (Build.VERSION.SDK_INT >= 31) {
+        dynamicLightColorScheme(this)
+    } else {
+        lightColorScheme(
+            primary = Color(0xFF6750A4),
+            secondary = Color(0xFF625B71),
+            tertiary = Color(0xFF7D5260)
+        )
     }
 
-    private fun addPermissionRow(p:LinearLayout,n:String,g:Boolean,a:()->Unit){p.addView(TextView(this).apply{text=(if(g) "✅ " else "❌ ")+n;setPadding(0,dp(10),0,dp(10));setOnClickListener{a()}})}
-    private fun title(t:String)=TextView(this).apply{text=t;textSize=28f;setTextColor(Color.BLACK);setPadding(0,0,0,dp(20))}
-    private fun label(t:String)=TextView(this).apply{text=t;textSize=18f;setTextColor(Color.rgb(25,118,210));setPadding(0,dp(28),0,dp(8))}
-    private fun labelWithValue(n:String,v:String)=TextView(this).apply{text="$n: $v";setPadding(0,dp(10),0,dp(4))}
-    private fun divider()=View(this).apply{setBackgroundColor(0xFFBDBDBD.toInt());layoutParams=LinearLayout.LayoutParams(-1,dp(1)).apply{topMargin=dp(18);bottomMargin=dp(4)}}
-    private fun button(t:String,a:()->Unit)=Button(this).apply{text=t;setOnClickListener{a()}}
-    private fun checkBox(t:String,c:Boolean,a:(Boolean)->Unit)=CheckBox(this).apply{text=t;isChecked=c;setOnCheckedChangeListener{_,v->a(v)}}
-    private fun seekBar(min:Int,max:Int,current:Int,a:(Int)->Unit)=SeekBar(this).apply{this.max=max-min;progress=(current-min).coerceIn(0,max-min);setOnSeekBarChangeListener(object:SeekBar.OnSeekBarChangeListener{override fun onProgressChanged(sb:SeekBar?,p:Int,fromUser:Boolean){if(fromUser)a(p+min)};override fun onStartTrackingTouch(sb:SeekBar?)=Unit;override fun onStopTrackingTouch(sb:SeekBar?)=Unit})}
-    private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
-    private fun isAccessibilityEnabled():Boolean{
-        val enabled=Settings.Secure.getString(contentResolver,Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)?:return false
-        val target=ComponentName(this,ScreenshotAccessibilityService::class.java).flattenToString()
-        return enabled.split(':').any{it.equals(target,true)}
+    @Composable
+    private fun ExpressiveSectionCard(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector, content: @Composable ColumnScope.() -> Unit) {
+        ElevatedCard(
+            shape = MaterialTheme.shapes.large,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Surface(
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        modifier = Modifier.size(46.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) { Icon(icon, null, tint = MaterialTheme.colorScheme.onSecondaryContainer) }
+                    }
+                    Text(title, style = MaterialTheme.typography.titleLarge)
+                }
+                content()
+            }
+        }
+    }
+
+    @Composable
+    private fun PermissionRow(title: String, granted: Boolean, description: String, onClick: () -> Unit) {
+        ListItem(
+            headlineContent = { Text(title, fontWeight = FontWeight.SemiBold) },
+            supportingContent = { Text(description) },
+            leadingContent = {
+                Icon(if (granted) Icons.Default.CheckCircle else Icons.Default.ErrorOutline, null,
+                    tint = if (granted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
+            },
+            trailingContent = { TextButton(onClick = onClick) { Text(if (granted) "確認" else "設定") } }
+        )
+    }
+
+    @Composable
+    private fun SettingSwitch(title: String, checked: Boolean, onChanged: (Boolean) -> Unit) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(title, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+            Switch(checked = checked, onCheckedChange = onChanged)
+        }
+    }
+
+    @Composable
+    private fun ValueSlider(title: String, value: Int, min: Int, max: Int, unit: String, onValue: (Int) -> Unit) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(title, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                Text("$value $unit", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            }
+            Slider(
+                value = value.toFloat(),
+                onValueChange = { onValue(it.toInt()) },
+                valueRange = min.toFloat()..max.toFloat(),
+                steps = ((max - min) / 4 - 1).coerceAtLeast(0)
+            )
+        }
+    }
+
+    private fun isAccessibilityEnabled(): Boolean {
+        val enabled = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: return false
+        val target = ComponentName(this, ScreenshotAccessibilityService::class.java).flattenToString()
+        return enabled.split(':').any { it.equals(target, true) }
     }
 }
+
 class FanSlotPickerView(
     context: android.content.Context,
     private var settings: FanSettings,
