@@ -177,7 +177,7 @@ class MainActivity : Activity() {
         root.addView(label("中央ボタン"))
         val actionRadius = labelWithValue("中央ボタン領域", s.actionRadiusDp.toString() + "dp")
         root.addView(actionRadius)
-        root.addView(seekBar(40, 120, s.actionRadiusDp) { v ->
+        root.addView(seekBar(40, 220, s.actionRadiusDp) { v ->
             s = s.copy(actionRadiusDp = v); FanSettings.save(this, s)
             actionRadius.text = "中央ボタン領域: " + v + "dp"
             OverlayService.instance?.applySettings()
