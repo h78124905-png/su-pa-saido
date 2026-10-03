@@ -40,10 +40,9 @@ object ScreenTranslator{
   val input=InputImage.fromBitmap(bitmap,0)
   val z=runCatching{zh.process(input).await()}.getOrNull()
   if(z?.text?.any{it in '\u4e00'..'\u9fff'}==true)return@coroutineScope listOf(1 to z)
-  listOfNotNull(
-   async{runCatching{0 to ja.process(input).await()}.getOrNull()},
-   async{runCatching{2 to ko.process(input).await()}.getOrNull()},
-   async{runCatching{3 to latin.process(input).await()}.getOrNull()}
-  ).awaitAll()
+  val a=async{runCatching{0 to ja.process(input).await()}.getOrNull()}
+  val b=async{runCatching{2 to ko.process(input).await()}.getOrNull()}
+  val d=async{runCatching{3 to latin.process(input).await()}.getOrNull()}
+  listOfNotNull(a.await(),b.await(),d.await())
  }
 }
