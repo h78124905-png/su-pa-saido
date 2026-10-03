@@ -9,6 +9,12 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.view.Gravity
+import android.view.View
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.hypot
+import kotlin.math.sin
 import android.provider.Settings
 import android.widget.*
 import androidx.core.content.ContextCompat
