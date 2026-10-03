@@ -23,26 +23,62 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.tasks.await
 
 object ScreenTranslator {
- private val recognizers=listOf(
+ private val recognizers = listOf(
   TextRecognition.getClient(JapaneseTextRecognizerOptions.Builder().build()),
   TextRecognition.getClient(ChineseTextRecognizerOptions.Builder().build()),
   TextRecognition.getClient(KoreanTextRecognizerOptions.Builder().build()),
   TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
  )
- private val languageIdentifier=LanguageIdentification.getClient()
- suspend fun translateAndOverlay(context:Context,bitmap:Bitmap,wm:WindowManager){
-  val candidates=recognizeCandidates(bitmap)
-  val detected=candidates.mapNotNull{t->if(t.text.isBlank())null else runCatching{languageIdentifier.identifyPossibleLanguages(t.text).await().maxByOrNull{it.confidence}?.let{Triple(t,it.languageTag,it.confidence)}}.getOrNull()}.maxByOrNull{it.third}
-  if(detected==null||detected.third<0.5f||detected.second=="und")return
-  val source=TranslateLanguage.fromLanguageTag(detected.second)?:return
-  if(source==TranslateLanguage.JAPANESE){TranslationOverlay.show(context,wm,detected.first.textBlocks.mapNotNull{b->b.boundingBox?.let{it to b.text}});return}
-  val translator:Translator=Translation.getClient(TranslatorOptions.Builder().setSourceLanguage(source).setTargetLanguage(TranslateLanguage.JAPANESE).build())
-  try{
+ private val languageIdentifier = LanguageIdentification.getClient()
+
+ suspend fun translateAndOverlay(context: Context, bitmap: Bitmap, wm: WindowManager) {
+  val candidates = recognizeCandidates(bitmap)
+  val detected = candidates.mapNotNull { t ->
+   if (t.text.isBlank()) null else runCatching {
+    languageIdentifier.identifyPossibleLanguages(t.text).await()
+     .maxByOrNull { it.confidence }
+     ?.let { Triple(t, it.languageTag, it.confidence) }
+   }.getOrNull()
+  }.maxByOrNull { it.third }
+
+  if (detected == null || detected.third < 0.5f || detected.second == "und") return
+  val source = TranslateLanguage.fromLanguageTag(detected.second) ?: return
+
+  if (source == TranslateLanguage.JAPANESE) {
+   TranslationOverlay.show(context, wm, detected.first.textBlocks.mapNotNull { b ->
+    b.boundingBox?.let { it to b.text }
+   })
+   return
+  }
+
+  val translator: Translator = Translation.getClient(
+   TranslatorOptions.Builder()
+    .setSourceLanguage(source)
+    .setTargetLanguage(TranslateLanguage.JAPANESE)
+    .build()
+  )
+
+  try {
    translator.downloadModelIfNeeded(DownloadConditions.Builder().build()).await()
-   val results=mutableListOf<Pair<Rect,String>>()
-   for(block in detected.first.textBlocks){val rect=block.boundingBox?:continue;val translated=runCatching{translator.translate(block.text).await()}.getOrNull()?:continue;results+=rect to translated}
-   if(results.isNotEmpty())TranslationOverlay.show(context,wm,results)
-  }finally{translator.close()}
+   val results = mutableListOf<Pair<Rect, String>>()
+   for (block in detected.first.textBlocks) {
+    val rect = block.boundingBox ?: continue
+    val translated = runCatching { translator.translate(block.text).await() }.getOrNull() ?: continue
+    results += rect to translated
+   }
+   if (results.isNotEmpty()) TranslationOverlay.show(context, wm, results)
+  } finally {
+   translator.close()
+  }
  }
- private suspend fun recognizeCandidates(bitmap:Bitmap):List<Text>=coroutineScope{recognizers.map{r->async{runCatching{r.process(InputImage.fromBitmap(bitmap,0)).await()}.getOrNull()}}.awaitAll().filterNotNull()}
+
+ private suspend fun recognizeCandidates(bitmap: Bitmap): List<Text> = coroutineScope {
+  recognizers.map { recognizer ->
+   async {
+    runCatching {
+     recognizer.process(InputImage.fromBitmap(bitmap, 0)).await()
+    }.getOrNull()
+   }
+  }.awaitAll().filterNotNull()
+ }
 }
