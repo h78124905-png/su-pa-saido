@@ -3,16 +3,10 @@ package com.example.fanlauncher
 import android.content.Context
 import android.graphics.*
 import android.view.View
-import android.view.ViewGroup
 import android.view.WindowManager
 
 object TranslationOverlay {
-    fun show(
-        context: Context,
-        wm: WindowManager,
-        parent: ViewGroup,
-        items: List<Pair<Rect, String>>
-    ) {
+    fun show(context: Context, wm: WindowManager, items: List<Pair<Rect, String>>) {
         val view = object : View(context) {
             private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.WHITE
@@ -22,26 +16,23 @@ object TranslationOverlay {
             private val backgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.argb(180, 0, 0, 0)
             }
-
             override fun onDraw(canvas: Canvas) {
-                super.onDraw(canvas)
                 items.forEach { (rect, text) ->
                     canvas.drawRect(rect, backgroundPaint)
-                    canvas.drawText(
-                        text,
-                        rect.left.toFloat(),
-                        rect.centerY().toFloat(),
-                        textPaint
-                    )
+                    canvas.drawText(text, rect.left.toFloat(), rect.centerY().toFloat(), textPaint)
                 }
             }
         }
-
-        view.layoutParams = ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        )
-        parent.addView(view)
-        view.postDelayed({ parent.removeView(view) }, 4000)
+        val params = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            PixelFormat.TRANSLUCENT
+        ).apply { gravity = android.view.Gravity.TOP or android.view.Gravity.START }
+        wm.addView(view, params)
+        view.postDelayed({ runCatching { wm.removeView(view) } }, 4000L)
     }
 }

@@ -15,10 +15,7 @@ import com.google.mlkit.nl.translate.TranslatorOptions
 import kotlinx.coroutines.tasks.await
 
 object ScreenTranslator {
-    private val recognizer = TextRecognition.getClient(
-        JapaneseTextRecognizerOptions.Builder().build()
-    )
-
+    private val recognizer = TextRecognition.getClient(JapaneseTextRecognizerOptions.Builder().build())
     private val translator = Translation.getClient(
         TranslatorOptions.Builder()
             .setSourceLanguage(TranslateLanguage.JAPANESE)
@@ -26,30 +23,18 @@ object ScreenTranslator {
             .build()
     )
 
-    suspend fun translateAndOverlay(
-        context: Context,
-        bitmap: Bitmap,
-        wm: WindowManager,
-        parent: android.view.ViewGroup
-    ) {
+    suspend fun translateAndOverlay(context: Context, bitmap: Bitmap, wm: WindowManager) {
         val text = recognize(bitmap) ?: return
-
-        translator.downloadModelIfNeeded(
-            DownloadConditions.Builder().build()
-        ).await()
-
+        translator.downloadModelIfNeeded(DownloadConditions.Builder().build()).await()
         val results = mutableListOf<Pair<Rect, String>>()
         for (block in text.textBlocks) {
             val rect = block.boundingBox ?: continue
-            val translated = translator.translate(block.text).await()
-            results += rect to translated
+            results += rect to translator.translate(block.text).await()
         }
-
-        TranslationOverlay.show(context, wm, parent, results)
+        TranslationOverlay.show(context, wm, results)
     }
 
-    private suspend fun recognize(bitmap: Bitmap): Text? =
-        runCatching {
-            recognizer.process(InputImage.fromBitmap(bitmap, 0)).await()
-        }.getOrNull()
+    private suspend fun recognize(bitmap: Bitmap): Text? = runCatching {
+        recognizer.process(InputImage.fromBitmap(bitmap, 0)).await()
+    }.getOrNull()
 }
