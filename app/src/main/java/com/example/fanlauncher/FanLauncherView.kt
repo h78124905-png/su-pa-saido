@@ -7,9 +7,9 @@ import kotlin.math.*
 class FanLauncherView(context:Context,private val settings:FanSettings):View(context){
  var tier1Items:List<FanItem> = emptyList();var tier2Items:List<FanItem> = emptyList();var onItemSelected:((FanItem)->Unit)?=null;var onDismissed:(()->Unit)?=null
  private val sweepTotal=90f;private val startAngle=if(settings.edge==EdgeSide.RIGHT)180f else 270f;private var vertexX=0f;private var vertexY=0f
- private val tier1Radius=420f;private val tier2Radius=780f;private val iconSize=90f;private var selectedTier=0;private var selectedIndex=-1
+ private val tier1Radius=600f;private val tier2Radius=1080f;private val iconSize=90f;private var selectedTier=0;private var selectedIndex=-1
  override fun onSizeChanged(w:Int,h:Int,ow:Int,oh:Int){vertexX=if(settings.edge==EdgeSide.RIGHT)w.toFloat() else 0f;vertexY=h/2f}
- fun setVertexY(y:Float){vertexY=y.coerceIn(height*.1f,height*.6f);invalidate()}
+ fun setVertexY(y:Float){vertexY=y.coerceIn(0f,height.toFloat());invalidate()}
  override fun onDraw(c:Canvas){val p=Paint(Paint.ANTI_ALIAS_FLAG);drawTier(c,p,tier1Items,tier1Radius,1);if(settings.tiers==2&&tier2Items.isNotEmpty())drawTier(c,p,tier2Items,tier2Radius,2)}
  private fun drawTier(c:Canvas,p:Paint,items:List<FanItem>,radius:Float,tier:Int){if(items.isEmpty())return;val per=sweepTotal/items.size;items.forEachIndexed{i,item->val start=startAngle+i*per;val sel=selectedTier==tier&&selectedIndex==i;p.color=item.color;p.alpha=if(sel)255 else 170;c.drawArc(RectF(vertexX-radius,vertexY-radius,vertexX+radius,vertexY+radius),start,per-2f,true,p);item.icon?.let{icon->val mid=Math.toRadians((start+per/2).toDouble());val ir=radius*.72f;val ix=vertexX+ir*cos(mid).toFloat();val iy=vertexY+ir*sin(mid).toFloat();val size=if(sel)iconSize*1.2f else iconSize;val h=size/2;icon.setBounds((ix-h).toInt(),(iy-h).toInt(),(ix+h).toInt(),(iy+h).toInt());icon.draw(c)}}}
  override fun onTouchEvent(e:MotionEvent)=false
