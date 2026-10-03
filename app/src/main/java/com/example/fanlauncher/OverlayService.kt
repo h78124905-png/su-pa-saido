@@ -1,5 +1,6 @@
 package com.example.fanlauncher
-import android.app.*;import android.content.Intent;import android.content.pm.ServiceInfo;import android.graphics.*;import android.net.Uri;import android.os.*;import android.provider.MediaStore;import android.view.*;import android.widget.Toast;import androidx.core.app.NotificationCompat;import kotlinx.coroutines.*
+import android.accessibilityservice.AccessibilityService
+import android.app.*;import android.content.Intent;import android.content.pm.ServiceInfo;import android.graphics.*;import android.os.*;import android.view.*;import android.widget.Toast;import androidx.core.app.NotificationCompat;import kotlinx.coroutines.*
 class OverlayService:Service(){
  private lateinit var wm:WindowManager;private var edgeView:EdgeOverlayView?=null;private var fanView:FanLauncherView?=null;private val scope=CoroutineScope(Dispatchers.Main.immediate+SupervisorJob())
  companion object{@Volatile var isRunning=false;private set;var instance:OverlayService?=null;private set}
@@ -11,16 +12,27 @@ class OverlayService:Service(){
  private suspend fun buildItems(pkgs:List<String>,maxApps:Int):List<FanItem> = withContext(Dispatchers.Default){val pm=packageManager;pkgs.take(maxApps).mapNotNull{pkg->runCatching{val i=pm.getApplicationInfo(pkg,0);FanItem(pm.getApplicationLabel(i).toString(),pm.getApplicationIcon(i),AppColorExtractor.extract(this@OverlayService,pkg),FanAction.LaunchApp(pkg))}.getOrNull()}}
  private fun hideFan(){fanView?.let{runCatching{wm.removeView(it)}};fanView=null}
  private fun executeAction(item:FanItem){executeAction(item.action)}
- private fun executeAction(a:FanAction){when(a){is FanAction.LaunchApp->packageManager.getLaunchIntentForPackage(a.packageName)?.also{it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(it)};FanAction.Screenshot->{
-                val service=ScreenshotAccessibilityService.instance
-                if(service==null){Toast.makeText(this,"アクセシビリティを有効にしてください",Toast.LENGTH_SHORT).show()}
-                else service.capture{b->if(b!=null)saveScreenshot(b)else Toast.makeText(this,"スクリーンショットに失敗しました",Toast.LENGTH_SHORT).show()}
-            };FanAction.Translate->{
-                val service=ScreenshotAccessibilityService.instance
-                if(service==null){Toast.makeText(this,"アクセシビリティを有効にしてください",Toast.LENGTH_SHORT).show()}
-                else service.capture{b->if(b!=null)scope.launch{ScreenTranslator.translateAndOverlay(this@OverlayService,b,wm)}else Toast.makeText(this,"画面取得に失敗しました",Toast.LENGTH_SHORT).show()}
-            }}}
- private fun saveScreenshot(b:Bitmap){scope.launch(Dispatchers.IO){val v=android.content.ContentValues().apply{put(MediaStore.Images.Media.DISPLAY_NAME,"fanlauncher_"+System.currentTimeMillis()+".png");put(MediaStore.Images.Media.MIME_TYPE,"image/png");if(Build.VERSION.SDK_INT>=29){put(MediaStore.Images.Media.RELATIVE_PATH,Environment.DIRECTORY_PICTURES+"/FanLauncher");put(MediaStore.Images.Media.IS_PENDING,1)}};val u=contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,v);if(u==null)return@launch;val ok=runCatching{contentResolver.openOutputStream(u)?.use{b.compress(Bitmap.CompressFormat.PNG,100,it)}?:false}.getOrDefault(false);if(Build.VERSION.SDK_INT>=29)contentResolver.update(u,android.content.ContentValues().apply{put(MediaStore.Images.Media.IS_PENDING,0)},null,null);if(!ok)contentResolver.delete(u,null,null)}}
+ private fun executeAction(a:FanAction){
+     hideFan()
+     when(a){
+       is FanAction.LaunchApp->packageManager.getLaunchIntentForPackage(a.packageName)?.also{it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);startActivity(it)}
+       FanAction.Screenshot->{
+         val service=ScreenshotAccessibilityService.instance
+         if(service==null){Toast.makeText(this,"アクセシビリティを有効にしてください",Toast.LENGTH_SHORT).show()}
+         else if(!service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT)){
+             Toast.makeText(this,"スクリーンショットを開始できませんでした",Toast.LENGTH_SHORT).show()
+         }
+       }
+       FanAction.Translate->{
+         val service=ScreenshotAccessibilityService.instance
+         if(service==null){Toast.makeText(this,"アクセシビリティを有効にしてください",Toast.LENGTH_SHORT).show()}
+         else scope.launch{
+             delay(120)
+             service.capture{b->if(b!=null)scope.launch{ScreenTranslator.translateAndOverlay(this@OverlayService,b,wm)}else Toast.makeText(this@OverlayService,"画面取得に失敗しました",Toast.LENGTH_SHORT).show()}
+         }
+       }
+     }
+ }
  private fun buildNotification():Notification{val c=NotificationChannel("fan","FanLauncher",NotificationManager.IMPORTANCE_LOW);(getSystemService(NOTIFICATION_SERVICE)as NotificationManager).createNotificationChannel(c);return NotificationCompat.Builder(this,"fan").setContentTitle("FanLauncher 稼働中").setContentText("エッジからスワイプでランチャーを開きます").setSmallIcon(android.R.drawable.ic_menu_compass).setOngoing(true).build()}
  override fun onStartCommand(i:Intent?,flags:Int,startId:Int)=START_STICKY
  override fun onDestroy(){isRunning=false;instance=null;edgeView?.let{runCatching{wm.removeView(it)}};hideFan();scope.cancel();super.onDestroy()}
