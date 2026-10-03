@@ -20,6 +20,12 @@ import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.*
 
 class OverlayService : Service() {
+    companion object {
+        @Volatile
+        var isRunning: Boolean = false
+            private set
+    }
+
     private lateinit var wm: WindowManager
     private lateinit var root: FrameLayout
     private lateinit var edge: EdgeOverlayView
@@ -28,6 +34,7 @@ class OverlayService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        isRunning = true
         val notification = buildNotification()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
@@ -198,6 +205,7 @@ class OverlayService : Service() {
     }
 
     override fun onDestroy() {
+        isRunning = false
         scope.cancel()
         if (::root.isInitialized) runCatching { wm.removeView(root) }
         super.onDestroy()
