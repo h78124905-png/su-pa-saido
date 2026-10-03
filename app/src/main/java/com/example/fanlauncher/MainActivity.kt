@@ -175,6 +175,13 @@ class MainActivity : Activity() {
         })
 
         root.addView(label("中央ボタン"))
+        val actionRadius = labelWithValue("中央ボタン領域", s.actionRadiusDp.toString() + "dp")
+        root.addView(actionRadius)
+        root.addView(seekBar(40, 120, s.actionRadiusDp) { v ->
+            s = s.copy(actionRadiusDp = v); FanSettings.save(this, s)
+            actionRadius.text = "中央ボタン領域: " + v + "dp"
+            OverlayService.instance?.applySettings()
+        })
         root.addView(checkBox("スクショボタン表示", s.showScreenshot) {
             s = s.copy(showScreenshot = it); FanSettings.save(this, s); picker.updateSettings(s); OverlayService.instance?.applySettings()
         })
