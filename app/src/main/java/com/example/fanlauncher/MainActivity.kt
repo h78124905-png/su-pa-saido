@@ -11,6 +11,7 @@ import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -24,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
 
@@ -33,6 +35,7 @@ class MainActivity : ComponentActivity() {
         setContent { FanLauncherSettings() }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun FanLauncherSettings() {
         val context = LocalContext.current
@@ -75,7 +78,7 @@ class MainActivity : ComponentActivity() {
                 extraLarge = RoundedCornerShape(38.dp)
             ),
             typography = Typography(
-                headlineMedium = LocalTextStyle.current.toTextStyle().copy(fontWeight = FontWeight.Bold),
+                headlineMedium = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold),
                 titleLarge = LocalTextStyle.current.toTextStyle().copy(fontWeight = FontWeight.SemiBold),
                 bodyLarge = LocalTextStyle.current.toTextStyle().copy(fontSize = 16.sp)
             )
