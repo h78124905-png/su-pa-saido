@@ -3,6 +3,7 @@ package com.example.fanlauncher
 import android.app.*
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.pm.ServiceInfo
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
@@ -21,7 +22,16 @@ class OverlayService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        startForeground(1, buildNotification())
+        val notification = buildNotification()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(
+                1,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
+        } else {
+            startForeground(1, notification)
+        }
         wm = getSystemService(WINDOW_SERVICE) as WindowManager
         setupOverlay()
     }
@@ -90,6 +100,7 @@ class OverlayService : Service() {
         val apps = pm.queryIntentActivities(launcherIntent, PackageManager.MATCH_ALL)
             .distinctBy { it.activityInfo.packageName }
             .filter { it.activityInfo.packageName != packageName }
+            .sortedBy { pm.getApplicationLabel(it.activityInfo.applicationInfo).toString() }
 
         val appItems = apps.map { resolveInfo ->
             val pkg = resolveInfo.activityInfo.packageName
