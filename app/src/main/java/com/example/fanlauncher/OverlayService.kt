@@ -14,7 +14,7 @@ class OverlayService:Service(){
   (0 until maxApps).map{index->
    val pkg=pkgs.getOrNull(index).orEmpty()
    if(pkg.isBlank()) FanItem("",null,0xFFE0E0E0.toInt(),FanAction.Empty)
-   else if(pkg=="__APP_LIST__") FanItem("アプリ一覧",pm.getDefaultActivityIcon(),0xFF616161.toInt(),FanAction.OpenAppList)
+   else if(pkg=="__APP_LIST__") FanItem("アプリ一覧",pm.getDefaultActivityIcon(),0xFF616161.toInt(),FanAction.CloseFan)
    else runCatching{val i=pm.getApplicationInfo(pkg,0);FanItem(pm.getApplicationLabel(i).toString(),pm.getApplicationIcon(pkg),AppColorExtractor.extract(this@OverlayService,pkg),FanAction.LaunchApp(pkg))}.getOrElse{FanItem("",null,0xFFE0E0E0.toInt(),FanAction.Empty)}
   }
 }
