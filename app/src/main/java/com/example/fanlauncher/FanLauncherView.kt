@@ -17,7 +17,7 @@ class FanLauncherView(context: Context, private val settings: FanSettings) : Vie
     private val startAngle = inwardCenter - sweepTotal / 2f
     private val tier1Radius = settings.fanRadiusDp * density
     private val tier2Radius = tier1Radius * 1.62f
-    private val actionRadius = min(70f * density, tier1Radius * .30f)
+    private val actionRadius = min(settings.actionRadiusDp * density, tier1Radius * .30f)
     private val iconSize = 46f * density
 
     private var vertexX = 0f
