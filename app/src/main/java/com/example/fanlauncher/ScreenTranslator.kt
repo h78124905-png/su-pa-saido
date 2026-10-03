@@ -4,18 +4,15 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.view.WindowManager
-import com.google.android.gms.tasks.Task
 import com.google.mlkit.common.model.DownloadConditions
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
-import com.google.mlkit.nl.translate.TranslateLanguage
-import com.google.mlkit.nl.translate.Translation
-import com.google.mlkit.nl.translate.TranslatorOptions
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
+import com.google.mlkit.translate.TranslateLanguage
+import com.google.mlkit.translate.Translation
+import com.google.mlkit.translate.TranslatorOptions
+import kotlinx.coroutines.tasks.await
 
 object ScreenTranslator {
     private val recognizer = TextRecognition.getClient(
@@ -52,15 +49,7 @@ object ScreenTranslator {
     }
 
     private suspend fun recognize(bitmap: Bitmap): Text? =
-        suspendCancellableCoroutine { continuation ->
-            recognizer.process(InputImage.fromBitmap(bitmap, 0))
-                .addOnSuccessListener { continuation.resume(it) }
-                .addOnFailureListener { continuation.resume(null) }
-        }
+        runCatching {
+            recognizer.process(InputImage.fromBitmap(bitmap, 0)).await()
+        }.getOrNull()
 }
-
-private suspend fun <T> Task<T>.await(): T =
-    suspendCancellableCoroutine { continuation ->
-        addOnSuccessListener { continuation.resume(it) }
-        addOnFailureListener { continuation.resumeWithException(it) }
-    }
