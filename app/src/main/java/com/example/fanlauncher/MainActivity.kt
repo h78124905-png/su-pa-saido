@@ -25,7 +25,7 @@ class MainActivity : Activity() {
         if(Build.VERSION.SDK_INT>=33)addPermissionRow(root,"通知",checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)==PackageManager.PERMISSION_GRANTED){requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS),100)}
         root.addView(label("サービス"))
         val status=TextView(this).apply{setPadding(0,dp(8),0,dp(8))};root.addView(status)
-        fun refresh(){val running=OverlayService.isRunning;status.text=if(running)"OverlayService: 稼働中"else"OverlayService: 停止中";status.setTextColor(if(running)Color.rgb(0,120,70)else Color.RED)}
+        fun refresh(){val running=OverlayService.isRunning;status.text=if(running) "OverlayService: 稼働中" else "OverlayService: 停止中";status.setTextColor(if(running) Color.rgb(0,120,70) else Color.RED)}
         refresh()
         root.addView(button("サービスを開始 / 再起動"){stopService(Intent(this,OverlayService::class.java));ContextCompat.startForegroundService(this,Intent(this,OverlayService::class.java));status.postDelayed(::refresh,500)})
         root.addView(label("エッジ設定"))
@@ -48,7 +48,7 @@ class MainActivity : Activity() {
         root.addView(checkBox("翻訳ボタン表示",s.showTranslate){s=s.copy(showTranslate=it);FanSettings.save(this,s)})
         root.addView(button("設定を反映（サービス再起動）"){stopService(Intent(this,OverlayService::class.java));ContextCompat.startForegroundService(this,Intent(this,OverlayService::class.java));Toast.makeText(this,"設定を反映しました",Toast.LENGTH_SHORT).show()})
     }
-    private fun addPermissionRow(p:LinearLayout,n:String,g:Boolean,a:()->Unit){p.addView(TextView(this).apply{text=(if(g)"✅ "else"❌ ")+n;setPadding(0,dp(10),0,dp(10));setOnClickListener{a()}})}
+    private fun addPermissionRow(p:LinearLayout,n:String,g:Boolean,a:()->Unit){p.addView(TextView(this).apply{text=(if(g) "✅ " else "❌ ")+n;setPadding(0,dp(10),0,dp(10));setOnClickListener{a()}})}
     private fun title(t:String)=TextView(this).apply{text=t;textSize=28f;setTextColor(Color.BLACK);setPadding(0,0,0,dp(20))}
     private fun label(t:String)=TextView(this).apply{text=t;textSize=18f;setTextColor(Color.rgb(25,118,210));setPadding(0,dp(28),0,dp(8))}
     private fun labelWithValue(n:String,v:String)=TextView(this).apply{text="$n: $v";setPadding(0,dp(10),0,dp(4))}
@@ -56,5 +56,5 @@ class MainActivity : Activity() {
     private fun checkBox(t:String,c:Boolean,a:(Boolean)->Unit)=CheckBox(this).apply{text=t;isChecked=c;setOnCheckedChangeListener{_,v->a(v)}}
     private fun seekBar(min:Int,max:Int,current:Int,a:(Int)->Unit)=SeekBar(this).apply{this.max=max-min;progress=(current-min).coerceIn(0,max-min);setOnSeekBarChangeListener(object:SeekBar.OnSeekBarChangeListener{override fun onProgressChanged(sb:SeekBar?,p:Int,fromUser:Boolean){if(fromUser)a(p+min)};override fun onStartTrackingTouch(sb:SeekBar?)=Unit;override fun onStopTrackingTouch(sb:SeekBar?)=Unit})}
     private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
-    private fun isAccessibilityEnabled():Boolean{val enabled=Settings.Secure.getString(contentResolver,Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)?:return false;val target="$packageName/${ScreenshotAccessibilityService::class.java.name}";return enabled.split(":").any{it.equals(target,true)}
+    private fun isAccessibilityEnabled():Boolean{val enabled=Settings.Secure.getString(contentResolver,Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)?:return false;val target="$packageName/${ScreenshotAccessibilityService::class.java.name}";return enabled.split(":").any{it.equals(target,true)}}
 }
