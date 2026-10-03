@@ -27,7 +27,8 @@ class OverlayService : Service() {
     }
 
     private lateinit var wm: WindowManager
-    private lateinit var root: FrameLayout
+    private lateinit var edgeRoot: FrameLayout
+    private lateinit var fanRoot: FrameLayout
     private lateinit var edge: EdgeOverlayView
     private var fanView: FanLauncherView? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -59,38 +60,63 @@ class OverlayService : Service() {
         } else {
             WindowManager.LayoutParams.TYPE_PHONE
         }
-        val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT,
+
+        val density = resources.displayMetrics.density
+        val edgeWidth = (48 * density).toInt()
+
+        val edgeParams = WindowManager.LayoutParams(
+            edgeWidth * 2,
             WindowManager.LayoutParams.MATCH_PARENT,
             type,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
-        ).apply { gravity = Gravity.TOP or Gravity.START }
+        ).apply {
+            gravity = Gravity.END or Gravity.CENTER_VERTICAL
+        }
 
-        root = FrameLayout(this)
+        edgeRoot = FrameLayout(this)
         edge = EdgeOverlayView(this).apply {
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
         }
-        root.addView(edge)
-        wm.addView(root, params)
+        edgeRoot.addView(edge)
+        wm.addView(edgeRoot, edgeParams)
 
-        edge.onSwipeStart = { x, y -> showFan(x, y) }
+        edge.onSwipeStart = { x, y -> showFan(x, y, type) }
         edge.onSwipeMove = { x, y -> fanView?.updateSelection(x, y) }
         edge.onSwipeEnd = { finishFan() }
     }
 
-    private fun showFan(x: Float, y: Float) {
+    private fun showFan(x: Float, y: Float, type: Int) {
         if (fanView != null) return
+
         val fan = FanLauncherView(this)
         fan.layoutParams = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
         )
         fan.setCenter(resources.displayMetrics.widthPixels.toFloat(), y)
-        root.addView(fan)
+
+        fanRoot = FrameLayout(this)
+        fanRoot.addView(fan)
+
+        val fanParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            type,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+        }
+
+        wm.addView(fanRoot, fanParams)
         fanView = fan
         scope.launch { fan.items = buildItems() }
     }
@@ -99,7 +125,9 @@ class OverlayService : Service() {
         val fan = fanView ?: return
         val item = fan.consumeSelection()
         fanView = null
-        root.removeView(fan)
+        if (::fanRoot.isInitialized) {
+            runCatching { wm.removeView(fanRoot) }
+        }
         item?.let(::executeAction)
     }
 
@@ -144,7 +172,7 @@ class OverlayService : Service() {
                 ScreenshotAccessibilityService.instance?.capture { bitmap ->
                     if (bitmap != null) {
                         scope.launch {
-                            ScreenTranslator.translateAndOverlay(this@OverlayService, bitmap, wm, root)
+                            ScreenTranslator.translateAndOverlay(this@OverlayService, bitmap, wm, edgeRoot)
                         }
                     }
                 }
@@ -215,7 +243,8 @@ class OverlayService : Service() {
     override fun onDestroy() {
         isRunning = false
         scope.cancel()
-        if (::root.isInitialized) runCatching { wm.removeView(root) }
+        if (::fanRoot.isInitialized) runCatching { wm.removeView(fanRoot) }
+        if (::edgeRoot.isInitialized) runCatching { wm.removeView(edgeRoot) }
         super.onDestroy()
     }
 
