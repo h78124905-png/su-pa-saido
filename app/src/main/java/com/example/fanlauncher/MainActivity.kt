@@ -23,6 +23,7 @@ import androidx.core.content.ContextCompat
 class MainActivity : AppCompatActivity() {
     private lateinit var statusLayout: LinearLayout
     private lateinit var serviceStatus: TextView
+    private lateinit var crashStatus: TextView
 
     private val notificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {
@@ -68,6 +69,13 @@ class MainActivity : AppCompatActivity() {
             setPadding(dp(12), dp(12), dp(12), dp(12))
         }
         root.addView(serviceStatus, matchWrap())
+
+        crashStatus = TextView(this).apply {
+            textSize = 12f
+            setPadding(dp(12), dp(12), dp(12), dp(12))
+            setTextColor(Color.rgb(180, 0, 0))
+        }
+        root.addView(crashStatus, matchWrap())
 
         root.addView(Button(this).apply {
             text = "サービスを開始 / 再起動"
@@ -132,6 +140,17 @@ class MainActivity : AppCompatActivity() {
         serviceStatus.setTextColor(
             if (running) Color.rgb(0, 120, 70) else Color.rgb(180, 0, 0)
         )
+
+        val crashFile = java.io.File(filesDir, "service_crash.log")
+        if (crashFile.exists()) {
+            crashStatus.text = "⚠ サービス起動エラー\n\n" + runCatching {
+                crashFile.readText()
+            }.getOrElse { error -> "エラーログの読み込みに失敗しました: " + error.stackTraceToString() }
+            crashStatus.setBackgroundColor(Color.rgb(255, 235, 235))
+        } else {
+            crashStatus.text = ""
+            crashStatus.setBackgroundColor(Color.TRANSPARENT)
+        }
     }
 
     private fun addStatus(label: String, value: String, ok: Boolean) {

@@ -1,8 +1,6 @@
 package com.example.fanlauncher
 
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Paint
 import android.graphics.Rect
 import android.view.MotionEvent
 import android.view.View
@@ -16,10 +14,6 @@ class EdgeOverlayView(context: Context) : View(context) {
     private val density = resources.displayMetrics.density
     private val edgeWidth = (48 * density).toInt()
     private val threshold = 24 * density
-    private val debugPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0x80FF0000.toInt()
-        style = Paint.Style.FILL
-    }
 
     var onSwipeStart: ((Float, Float) -> Unit)? = null
     var onSwipeMove: ((Float, Float) -> Unit)? = null
@@ -32,12 +26,6 @@ class EdgeOverlayView(context: Context) : View(context) {
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         updateExclusion(w)
-    }
-
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-        val left = (width - edgeWidth).coerceAtLeast(0)
-        canvas.drawRect(left.toFloat(), 0f, width.toFloat(), height.toFloat(), debugPaint)
     }
 
     private fun updateExclusion(w: Int) {

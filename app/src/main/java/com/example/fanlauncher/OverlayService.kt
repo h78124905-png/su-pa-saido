@@ -34,15 +34,23 @@ class OverlayService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        isRunning = true
-        val notification = buildNotification()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
-        } else {
-            startForeground(1, notification)
+        try {
+            val notification = buildNotification()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+            } else {
+                startForeground(1, notification)
+            }
+            wm = getSystemService(WINDOW_SERVICE) as WindowManager
+            setupOverlay()
+            isRunning = true
+        } catch (e: Exception) {
+            isRunning = false
+            runCatching {
+                java.io.File(filesDir, "service_crash.log").writeText(e.stackTraceToString())
+            }
+            stopSelf()
         }
-        wm = getSystemService(WINDOW_SERVICE) as WindowManager
-        setupOverlay()
     }
 
     private fun setupOverlay() {
