@@ -1,6 +1,7 @@
 package com.example.fanlauncher
 import android.Manifest
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -59,4 +60,3 @@ class MainActivity : Activity() {
     private fun isAccessibilityEnabled():Boolean{return ScreenshotAccessibilityService.instance!=null}
 }
 class FanSlotPickerView(context:android.content.Context,var count:Int,var selected:List<String>,val onChanged:(List<String>)->Unit):LinearLayout(context){private val apps=context.packageManager.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER),0).map{it.activityInfo.applicationInfo}.distinctBy{it.packageName}.filter{it.packageName!=context.packageName}.sortedBy{context.packageManager.getApplicationLabel(it).toString()};init{orientation=HORIZONTAL;setPadding(0,8,0,8);rebuild()};fun setCount(n:Int){count=n;rebuild()};private fun rebuild(){removeAllViews();for(i in 0 until count){val b=Button(context);b.text=selected.getOrNull(i)?.let{context.packageManager.getApplicationLabel(context.packageManager.getApplicationInfo(it,0)).toString()}?:"＋ アプリ";b.setOnClickListener{val names=apps.map{context.packageManager.getApplicationLabel(it).toString()};AlertDialog.Builder(context).setTitle("スロット "+(i+1)).setItems(names.toTypedArray()){_,which->val p=selected.toMutableList();while(p.size<=i)p.add("");p[i]=apps[which].packageName;selected=p;onChanged(p.filter{it.isNotEmpty()});rebuild()}.setNegativeButton("キャンセル",null).show()};addView(b,LinearLayout.LayoutParams(0,dp(72),1f))}};private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()}
-}
