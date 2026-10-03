@@ -13,4 +13,6 @@ sealed class FanAction {
     data class LaunchApp(val packageName: String) : FanAction()
     data object Screenshot : FanAction()
     data object Translate : FanAction()
+    data object OpenAppList : FanAction()
+    data object Empty : FanAction()
 }

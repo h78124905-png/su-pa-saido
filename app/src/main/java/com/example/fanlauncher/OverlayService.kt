@@ -9,7 +9,15 @@ class OverlayService:Service(){
  private fun runOnMainThread(block:()->Unit){if(Looper.myLooper()==Looper.getMainLooper())block()else Handler(Looper.getMainLooper()).post(block)}
  private fun setupOverlay(){val s=FanSettings.load(this);val d=resources.displayMetrics.density;val p=WindowManager.LayoutParams((s.edgeWidthDp*d).toInt(),-1,WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT).apply{gravity=if(s.edge==EdgeSide.RIGHT)Gravity.END or Gravity.CENTER_VERTICAL else Gravity.START or Gravity.CENTER_VERTICAL};val e=EdgeOverlayView(this,s);e.onSwipeStart={x,y->showFan(x,y)};e.onSwipeMove={x,y->fanView?.updateSelection(x,y)};e.onSwipeEnd={fanView?.commitSelection();hideFan()};wm.addView(e,p);edgeView=e}
  private fun showFan(x:Float,y:Float){if(fanView!=null)return;val s=FanSettings.load(this);val p=WindowManager.LayoutParams(-1,-1,WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT).apply{gravity=Gravity.TOP or Gravity.START};val f=FanLauncherView(this,s);f.onItemSelected={executeAction(it)};f.onActionSelected={executeAction(it)};wm.addView(f,p);fanView=f;scope.launch{f.tier1Items=buildItems(s.tier1Apps,s.tier1Count);f.tier2Items=if(s.tiers==2)buildItems(s.tier2Apps,s.tier2Count)else emptyList();f.setVertexY(y);f.updateSelection(x,y)}}
- private suspend fun buildItems(pkgs:List<String>,maxApps:Int):List<FanItem> = withContext(Dispatchers.Default){val pm=packageManager;pkgs.take(maxApps).mapNotNull{pkg->runCatching{val i=pm.getApplicationInfo(pkg,0);FanItem(pm.getApplicationLabel(i).toString(),pm.getApplicationIcon(i),AppColorExtractor.extract(this@OverlayService,pkg),FanAction.LaunchApp(pkg))}.getOrNull()}}
+ private suspend fun buildItems(pkgs:List<String>,maxApps:Int):List<FanItem> = withContext(Dispatchers.Default){
+  val pm=packageManager
+  (0 until maxApps).map{index->
+   val pkg=pkgs.getOrNull(index).orEmpty()
+   if(pkg.isBlank()) FanItem("",null,0xFFE0E0E0.toInt(),FanAction.Empty)
+   else if(pkg=="__APP_LIST__") FanItem("アプリ一覧",pm.getDefaultActivityIcon(),0xFF616161.toInt(),FanAction.OpenAppList)
+   else runCatching{val i=pm.getApplicationInfo(pkg,0);FanItem(pm.getApplicationLabel(i).toString(),pm.getApplicationIcon(pkg),AppColorExtractor.extract(this@OverlayService,pkg),FanAction.LaunchApp(pkg))}.getOrElse{FanItem("",null,0xFFE0E0E0.toInt(),FanAction.Empty)}
+  }
+}
  private fun hideFan(){fanView?.let{runCatching{wm.removeView(it)}};fanView=null}
  private fun executeAction(item:FanItem){executeAction(item.action)}
  private fun executeAction(a:FanAction){
@@ -23,6 +31,7 @@ class OverlayService:Service(){
              Toast.makeText(this,"スクリーンショットを開始できませんでした",Toast.LENGTH_SHORT).show()
          }
        }
+       FanAction.OpenAppList->{val service=ScreenshotAccessibilityService.instance;if(service==null){Toast.makeText(this,"アクセシビリティを有効にしてください",Toast.LENGTH_SHORT).show()}else service.openAppList()}
        FanAction.Translate->{
          val service=ScreenshotAccessibilityService.instance
          if(service==null){Toast.makeText(this,"アクセシビリティを有効にしてください",Toast.LENGTH_SHORT).show()}
