@@ -6,7 +6,7 @@ enum class EdgeSide { LEFT, RIGHT }
 data class FanSettings(
  val edge:EdgeSide=EdgeSide.RIGHT,val edgeWidthDp:Int=48,val edgeTopRatio:Float=0f,val edgeBottomRatio:Float=1f,
  val swipeThresholdDp:Int=16,val tiers:Int=1,val tier1Count:Int=6,val tier2Count:Int=8,
- val tier1Apps:List<String>=emptyList(),val tier2Apps:List<String>=emptyList(),
+ val tier1Apps:List<String> = emptyList(),val tier2Apps:List<String> = emptyList(),
  val showScreenshot:Boolean=true,val showTranslate:Boolean=true,val showEdgeIndicator:Boolean=false){
  companion object{
   private const val PREF="fan_settings";private const val KEY="json"
