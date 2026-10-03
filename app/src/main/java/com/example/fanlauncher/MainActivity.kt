@@ -155,6 +155,7 @@ class MainActivity : Activity() {
             c2.text = "2段目アプリ数: " + v; picker.updateSettings(s); OverlayService.instance?.applySettings()
         })
 
+        root.addView(divider())
         root.addView(label("アプリ配置"))
         root.addView(TextView(this).apply {
             text = "下のランチャーUIをそのままプレビュー表示します。\n内側＝1段目 / 外側＝2段目。スロットをタップしてアプリを選択します。"
@@ -191,6 +192,7 @@ class MainActivity : Activity() {
     private fun title(t:String)=TextView(this).apply{text=t;textSize=28f;setTextColor(Color.BLACK);setPadding(0,0,0,dp(20))}
     private fun label(t:String)=TextView(this).apply{text=t;textSize=18f;setTextColor(Color.rgb(25,118,210));setPadding(0,dp(28),0,dp(8))}
     private fun labelWithValue(n:String,v:String)=TextView(this).apply{text="$n: $v";setPadding(0,dp(10),0,dp(4))}
+    private fun divider()=View(this).apply{setBackgroundColor(0xFFBDBDBD.toInt());layoutParams=LinearLayout.LayoutParams(-1,dp(1)).apply{topMargin=dp(18);bottomMargin=dp(4)}}
     private fun button(t:String,a:()->Unit)=Button(this).apply{text=t;setOnClickListener{a()}}
     private fun checkBox(t:String,c:Boolean,a:(Boolean)->Unit)=CheckBox(this).apply{text=t;isChecked=c;setOnCheckedChangeListener{_,v->a(v)}}
     private fun seekBar(min:Int,max:Int,current:Int,a:(Int)->Unit)=SeekBar(this).apply{this.max=max-min;progress=(current-min).coerceIn(0,max-min);setOnSeekBarChangeListener(object:SeekBar.OnSeekBarChangeListener{override fun onProgressChanged(sb:SeekBar?,p:Int,fromUser:Boolean){if(fromUser)a(p+min)};override fun onStartTrackingTouch(sb:SeekBar?)=Unit;override fun onStopTrackingTouch(sb:SeekBar?)=Unit})}
@@ -302,7 +304,14 @@ class FanSlotPickerView(
 
             paint.color = if (selected.getOrNull(i).isNullOrBlank()) 0xFFE0E0E0.toInt() else baseColor
             paint.alpha = if (selectedTier == tier && selectedSlot == i) 255 else 205
+            paint.style = android.graphics.Paint.Style.FILL
             c.drawPath(path, paint)
+            paint.style = android.graphics.Paint.Style.STROKE
+            paint.strokeWidth = dp(2).toFloat()
+            paint.color = 0xFF757575.toInt()
+            paint.alpha = 220
+            c.drawPath(path, paint)
+            paint.style = android.graphics.Paint.Style.FILL
 
             selected.getOrNull(i)?.takeIf { it.isNotBlank() }?.let { pkg ->
                 runCatching {
@@ -417,7 +426,10 @@ class FanSlotPickerView(
             settings = if (tier == 1) settings.copy(tier1Apps = p) else settings.copy(tier2Apps = p)
             onChanged(settings)
             invalidate()
-            currentDialog?.dismiss()
+            currentDialog?.let { dialog ->
+                currentDialog = null
+                dialog.dismiss()
+            }
         }
         parent.addView(row, LinearLayout.LayoutParams(-1, dp(60)))
     }
