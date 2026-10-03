@@ -18,6 +18,9 @@ object AppColorExtractor {
                     if (background is ColorDrawable) return@withContext background.color
                 }
                 val bitmap = icon.toBitmap()
+                if (bitmap.width <= 0 || bitmap.height <= 0) {
+                    return@withContext 0xFF607D8B.toInt()
+                }
                 val palette = Palette.from(bitmap).generate()
                 palette.getVibrantColor(
                     palette.getMutedColor(
