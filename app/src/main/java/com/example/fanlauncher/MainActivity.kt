@@ -387,7 +387,7 @@ class FanSlotPickerView(
         currentDialog?.dismiss()
         val rows = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
         addChoice(rows, tier, index, null, "未設定")
-        addChoice(rows, tier, index, "__APP_LIST__", "アプリ一覧へ戻る")
+        addChoice(rows, tier, index, "__CLOSE_FAN__", "戻る（扇を閉じる）")
         for (info in apps) {
             addChoice(rows, tier, index, info.packageName,
                 pm.getApplicationLabel(info).toString(), pm.getApplicationIcon(info))
@@ -407,7 +407,7 @@ class FanSlotPickerView(
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(12), dp(8), dp(12), dp(8))
         }
-        if (pkg == "__APP_LIST__") { row.addView(TextView(context).apply { text = "▦"; textSize = 24f; setTextColor(Color.DKGRAY); gravity = Gravity.CENTER; layoutParams = LinearLayout.LayoutParams(dp(44), dp(44)) })
+        if (pkg == "__CLOSE_FAN__") { row.addView(TextView(context).apply { text = "▦"; textSize = 24f; setTextColor(Color.DKGRAY); gravity = Gravity.CENTER; layoutParams = LinearLayout.LayoutParams(dp(44), dp(44)) })
         } else if (icon != null) {
             row.addView(ImageView(context).apply {
                 setImageDrawable(icon)
