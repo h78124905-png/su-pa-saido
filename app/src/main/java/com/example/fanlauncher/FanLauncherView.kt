@@ -58,8 +58,8 @@ class FanLauncherView(context: Context, private val settings: FanSettings) : Vie
         items.forEachIndexed { i, item ->
             val start = startAngle + i * per
             val selected = selectedTier == tier && selectedIndex == i
-            p.color = item.color
-            p.alpha = if (selected) 255 else 185
+            p.color = if (selected) 0xFFEFEFEF.toInt() else 0xFF171717.toInt()
+            p.alpha = if (selected) 245 else 215
             val path = Path().apply {
                 moveTo(
                     vertexX + inner * cos(Math.toRadians(start.toDouble())).toFloat(),
@@ -74,6 +74,12 @@ class FanLauncherView(context: Context, private val settings: FanSettings) : Vie
                 close()
             }
             c.drawPath(path, p)
+            p.style = Paint.Style.STROKE
+            p.strokeWidth = 1.5f * density
+            p.color = if (selected) 0xFFE10600.toInt() else 0xFF707070.toInt()
+            p.alpha = if (selected) 255 else 180
+            c.drawPath(path, p)
+            p.style = Paint.Style.FILL
 
             item.icon?.let { icon ->
                 val mid = Math.toRadians((start + per / 2f).toDouble())
@@ -122,8 +128,8 @@ class FanLauncherView(context: Context, private val settings: FanSettings) : Vie
             val point = actionPoint(index, buttons.size, actionRadius)
             val cx = point.first
             val cy = point.second
-            fill.color = if (action == FanAction.Screenshot) 0xFF455A64.toInt() else 0xFF00897B.toInt()
-            fill.alpha = if (selectedAction == action) 255 else 220
+            fill.color = if (selectedAction == action) 0xFFE10600.toInt() else 0xFF171717.toInt()
+            fill.alpha = if (selectedAction == action) 255 else 235
             c.drawCircle(cx, cy, buttonSize / 2f, fill)
 
             if (action == FanAction.Screenshot) {
