@@ -48,6 +48,6 @@ class FanLauncherView(context: Context, private val settings: FanSettings) : Vie
         else if(n in 0f..sweepTotal){selectedTier=when{radial>=b[0]&&radial<b[1]->1;radial>=b[1]&&radial<b[2]->2;radial>=b[2]&&radial<=1f->3;else->0};selectedIndex=when(selectedTier){1->indexFromAngle(n,tier1Items.size);2->indexFromAngle(n,tier2Items.size);3->indexFromAngle(n,tier3Items.size);else->-1}}
         val key=when{selectedAction!=null->"action:$selectedAction";selectedTier>0&&selectedIndex>=0->"tier:$selectedTier:$selectedIndex";else->null};if(key!=null&&key!=lastSelectionKey){performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);lastSelectionKey=key};invalidate()
     }
-    fun commitSelection(){selectedAction?.let{onActionSelected?.invoke(it)}?:when(selectedTier){1->tier1Items.getOrNull(selectedIndex)?.let{onItemSelected?.invoke(it)};2->tier2Items.getOrNull(selectedIndex)?.let{onItemSelected?.invoke(it)};3->tier3Items.getOrNull(selectedIndex)?.let{onItemSelected?.invoke(it)}};selectedAction=null;selectedTier=0;selectedIndex=-1}
+    fun commitSelection(){selectedAction?.let{onActionSelected?.invoke(it)}?:when(selectedTier){1->tier1Items.getOrNull(selectedIndex)?.let{onItemSelected?.invoke(it)};2->tier2Items.getOrNull(selectedIndex)?.let{onItemSelected?.invoke(it)};3->tier3Items.getOrNull(selectedIndex)?.let{onItemSelected?.invoke(it)};else->Unit};selectedAction=null;selectedTier=0;selectedIndex=-1}
     private fun indexFromAngle(n:Float,count:Int)=if(count==0)-1 else(n/(sweepTotal/count)).toInt().coerceIn(0,count-1)
 }
