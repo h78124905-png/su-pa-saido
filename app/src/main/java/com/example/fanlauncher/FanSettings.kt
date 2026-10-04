@@ -70,8 +70,8 @@ data class FanSettings(
             var a=a0.coerceIn(10,80);var b=b0.coerceIn(10,80);var c=c0.coerceIn(10,80)
             val total=a+b+c
             if(total!=100){
-                a=kotlin.math.round(a*100f/total).toInt().coerceAtLeast(10)
-                b=kotlin.math.round(b*100f/total).toInt().coerceAtLeast(10)
+                a=a*100/total.coerceAtLeast(10)
+                b=b*100/total.coerceAtLeast(10)
                 c=100-a-b
                 if(c<10){c=10;b=(100-a-c).coerceAtLeast(10)}
                 if(a+b+c!=100){a=34;b=33;c=33}
