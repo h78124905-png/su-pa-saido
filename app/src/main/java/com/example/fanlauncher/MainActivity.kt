@@ -117,7 +117,7 @@ class MainActivity : ComponentActivity() {
                         PermissionRow("オーバーレイ", overlayGranted, "他のアプリの上に扇を表示します") {
                             startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
                         }
-                        PermissionRow("アクセシビリティ", accessibilityGranted, "スクショと画面翻訳に使用します") {
+                        PermissionRow("アクセシビリティ", accessibilityGranted, "スクリーンショットに使用します") {
                             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                         }
                         if (Build.VERSION.SDK_INT >= 33) {
@@ -164,10 +164,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     ExpressiveSectionCard("扇のデザイン", Icons.Default.PieChart) {
-                        ValueSlider("開き角", settings.fanSweepDeg, 90, 180, "°") {
-                            save(settings.copy(fanSweepDeg = it))
-                        }
-                        ValueSlider("扇のサイズ", settings.fanRadiusDp, 160, 420, "dp") {
+                        ValueSlider("扇の高さ", settings.fanRadiusDp, 180, 520, "dp") {
                             save(settings.copy(fanRadiusDp = it))
                         }
                         ValueSlider("中央アクション領域", settings.actionRadiusDp, 40, 220, "dp") {
@@ -176,10 +173,8 @@ class MainActivity : ComponentActivity() {
                         ValueSlider("2段目との間隔", settings.tierSpacingDp, 48, 180, "dp") {
                             save(settings.copy(tierSpacingDp = it))
                         }
-                        ValueSlider("扇の上下位置", settings.fanVerticalOffsetDp, -160, 160, "dp") {
-                            save(settings.copy(fanVerticalOffsetDp = it))
-                        }
-                        Text("6スロットなら開き角150°前後が狙いやすい設定です。上下位置0dpでは、スワイプ開始位置がそのまま扇の頂点になります。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("扇はスワイプ開始位置に関係なく、画面下の左下・右下を中心に開きます。水平線より上だけを使います。扇の高さで大きさを調整できます。",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
 
                     ExpressiveSectionCard("アプリ配置", Icons.Default.Apps) {
@@ -210,9 +205,6 @@ class MainActivity : ComponentActivity() {
                         SettingSwitch("スクリーンショット", settings.showScreenshot) {
                             save(settings.copy(showScreenshot = it))
                         }
-                        SettingSwitch("画面翻訳", settings.showTranslate) {
-                            save(settings.copy(showTranslate = it))
-                        }
                     }
 
                     ExpressiveSectionCard("使い方", Icons.Default.Info) {
@@ -236,7 +228,7 @@ class MainActivity : ComponentActivity() {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("最初に3つの権限を設定すると、扇ランチャーの機能を使えます。")
                         Text("① オーバーレイ：扇を他のアプリの上に表示")
-                        Text("② アクセシビリティ：スクショと画面翻訳")
+                        Text("② アクセシビリティ：スクリーンショット")
                         Text("③ 通知：バックグラウンド動作を安定させるため")
                     }
                 },

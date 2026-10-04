@@ -35,14 +35,7 @@ class OverlayService:Service(){
        }
        FanAction.CloseFan->Unit
        FanAction.Empty->Unit
-       FanAction.Translate->{
-         val service=ScreenshotAccessibilityService.instance
-         if(service==null){Toast.makeText(this,"アクセシビリティを有効にしてください",Toast.LENGTH_SHORT).show()}
-         else scope.launch{
-             delay(120)
-             service.capture{b->if(b!=null)scope.launch{ScreenTranslator.translateAndOverlay(this@OverlayService,b,wm)}else Toast.makeText(this@OverlayService,"画面取得に失敗しました",Toast.LENGTH_SHORT).show()}
-         }
-       }
+
      }
  }
  private fun buildNotification():Notification{val c=NotificationChannel("fan","FanLauncher",NotificationManager.IMPORTANCE_LOW);(getSystemService(NOTIFICATION_SERVICE)as NotificationManager).createNotificationChannel(c);return NotificationCompat.Builder(this,"fan").setContentTitle("FanLauncher 稼働中").setContentText("エッジからスワイプでランチャーを開きます").setSmallIcon(android.R.drawable.ic_menu_compass).setOngoing(true).build()}

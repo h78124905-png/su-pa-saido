@@ -13,13 +13,12 @@ class FanLauncherView(context: Context, private val settings: FanSettings) : Vie
     var onActionSelected: ((FanAction) -> Unit)? = null
 
     private val density = resources.displayMetrics.density
-    private val sweepTotal = settings.fanSweepDeg.toFloat()
-    private val inwardCenter = if (settings.edge == EdgeSide.RIGHT) 180f else 0f
-    private val startAngle = inwardCenter - sweepTotal / 2f
+    private val sweepTotal = 90f
+    private val startAngle = if (settings.edge == EdgeSide.RIGHT) 180f else 270f
     private val tier1Radius = settings.fanRadiusDp * density
     private val tier2Radius = tier1Radius + settings.tierSpacingDp * density
     private val actionRadius = settings.actionRadiusDp * density
-    private val iconSize = 46f * density
+    private val iconSize = 58f * density
 
     private var vertexX = 0f
     private var vertexY = 0f
@@ -30,11 +29,11 @@ class FanLauncherView(context: Context, private val settings: FanSettings) : Vie
 
     override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
         vertexX = if (settings.edge == EdgeSide.RIGHT) w.toFloat() else 0f
-        vertexY = h / 2f
+        vertexY = h.toFloat()
     }
 
     fun setVertexY(y: Float) {
-        vertexY = (y + settings.fanVerticalOffsetDp * density).coerceIn(0f, height.toFloat())
+        vertexY = height.toFloat()
         invalidate()
     }
 
@@ -117,7 +116,7 @@ class FanLauncherView(context: Context, private val settings: FanSettings) : Vie
         val buttons = actionList()
         if (buttons.isEmpty()) return
 
-        val buttonSize = min(84f * density, actionRadius * .72f)
+        val buttonSize = min(96f * density, actionRadius * .78f)
         val fill = Paint(Paint.ANTI_ALIAS_FLAG)
         val icon = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE

@@ -12,7 +12,6 @@ data class FanItem(
 sealed class FanAction {
     data class LaunchApp(val packageName: String) : FanAction()
     data object Screenshot : FanAction()
-    data object Translate : FanAction()
     data object CloseFan : FanAction()
     data object Empty : FanAction()
 }
