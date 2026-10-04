@@ -43,9 +43,9 @@ data class FanSettings(
                     tier1Count = o.optInt("t1c",6).coerceIn(1,16),
                     tier2Count = o.optInt("t2c",6).coerceIn(1,16),
                     tier3Count = o.optInt("t3c",6).coerceIn(1,16),
-                    tier1Apps = o.optJSONArray("t1a").toList(),
-                    tier2Apps = o.optJSONArray("t2a").toList(),
-                    tier3Apps = o.optJSONArray("t3a").toList(),
+                    tier1Apps = o.optJSONArray("t1a")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList(),
+                    tier2Apps = o.optJSONArray("t2a")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList(),
+                    tier3Apps = o.optJSONArray("t3a")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList(),
                     fanWidthDp = o.optInt("width",o.optInt("radius",360)).coerceIn(180,700),
                     fanHeightDp = o.optInt("height",o.optInt("radius",320)).coerceIn(180,700),
                     actionRadiusDp = o.optInt("actionRadius",104).coerceIn(48,240),
@@ -98,6 +98,5 @@ data class FanSettings(
         val n=Companion.normalizeRatios(s.tier1Ratio,s.tier2Ratio,s.tier3Ratio)
         return s.copy(tier1Ratio=n[0],tier2Ratio=n[1],tier3Ratio=n[2])
     }
-    private fun JSONArray?.toList():List<String> = if(this==null)emptyList() else (0 until length()).map{optString(it)}
 }
 
