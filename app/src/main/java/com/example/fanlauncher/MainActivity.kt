@@ -381,7 +381,7 @@ class FanSlotPickerView(
         drawCenterActions(c)
 
         paint.style = android.graphics.Paint.Style.FILL
-        paint.color = AndroidColor.DKGRAY
+        paint.color = AndroidAndroidColor.DKGRAY
         paint.textAlign = android.graphics.Paint.Align.CENTER
         paint.textSize = dp(12).toFloat()
         c.drawText(if (settings.edge == EdgeSide.RIGHT) "右端から開く" else "左端から開く",
@@ -463,14 +463,14 @@ class FanSlotPickerView(
             c.drawCircle(centerX, centerY - dp(24), dp(20).toFloat(), paint)
             paint.color = 0xFF00897B.toInt()
             c.drawCircle(centerX, centerY + dp(24), dp(20).toFloat(), paint)
-            paint.color = AndroidColor.WHITE; paint.textSize = dp(9).toFloat()
+            paint.color = AndroidAndroidColor.WHITE; paint.textSize = dp(9).toFloat()
             c.drawText("写真", centerX, centerY - dp(21), paint)
             c.drawText("翻訳", centerX, centerY + dp(27), paint)
         } else {
             paint.color = if (actions[0] == "写真") 0xFF455A64.toInt() else 0xFF00897B.toInt()
             paint.alpha = 230
             c.drawCircle(centerX, centerY, dp(22).toFloat(), paint)
-            paint.color = Color.WHITE; paint.textSize = dp(9).toFloat()
+            paint.color = AndroidColor.WHITE; paint.textSize = dp(9).toFloat()
             c.drawText(actions[0], centerX, centerY + dp(3), paint)
         }
     }
@@ -527,7 +527,7 @@ class FanSlotPickerView(
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(12), dp(8), dp(12), dp(8))
         }
-        if (pkg == "__CLOSE_FAN__") { row.addView(TextView(context).apply { text = "▦"; textSize = 24f; setTextColor(Color.DKGRAY); gravity = Gravity.CENTER; layoutParams = LinearLayout.LayoutParams(dp(44), dp(44)) })
+        if (pkg == "__CLOSE_FAN__") { row.addView(TextView(context).apply { text = "▦"; textSize = 24f; setTextColor(AndroidColor.DKGRAY); gravity = Gravity.CENTER; layoutParams = LinearLayout.LayoutParams(dp(44), dp(44)) })
         } else if (icon != null) {
             row.addView(ImageView(context).apply {
                 setImageDrawable(icon)
