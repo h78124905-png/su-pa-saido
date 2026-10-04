@@ -3,6 +3,7 @@ import android.content.Context
 import android.graphics.*
 import android.view.MotionEvent
 import android.view.View
+import android.view.HapticFeedbackConstants
 import kotlin.math.*
 
 class FanLauncherView(context: Context, private val settings: FanSettings) : View(context) {
@@ -16,7 +17,7 @@ class FanLauncherView(context: Context, private val settings: FanSettings) : Vie
     private val inwardCenter = if (settings.edge == EdgeSide.RIGHT) 180f else 0f
     private val startAngle = inwardCenter - sweepTotal / 2f
     private val tier1Radius = settings.fanRadiusDp * density
-    private val tier2Radius = tier1Radius * 1.62f
+    private val tier2Radius = tier1Radius + settings.tierSpacingDp * density
     private val actionRadius = settings.actionRadiusDp * density
     private val iconSize = 46f * density
 
@@ -25,6 +26,7 @@ class FanLauncherView(context: Context, private val settings: FanSettings) : Vie
     private var selectedTier = 0
     private var selectedIndex = -1
     private var selectedAction: FanAction? = null
+    private var lastSelectionKey: String? = null
 
     override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
         vertexX = if (settings.edge == EdgeSide.RIGHT) w.toFloat() else 0f
@@ -32,7 +34,7 @@ class FanLauncherView(context: Context, private val settings: FanSettings) : Vie
     }
 
     fun setVertexY(y: Float) {
-        vertexY = y.coerceIn(0f, height.toFloat())
+        vertexY = (y + settings.fanVerticalOffsetDp * density).coerceIn(0f, height.toFloat())
         invalidate()
     }
 
@@ -185,6 +187,15 @@ class FanLauncherView(context: Context, private val settings: FanSettings) : Vie
                 selectedTier = 2
                 selectedIndex = indexFromAngle(n, tier2Items.size)
             }
+        }
+        val key = when {
+            selectedAction != null -> "action:${selectedAction}"
+            selectedTier > 0 && selectedIndex >= 0 -> "tier:$selectedTier:$selectedIndex"
+            else -> null
+        }
+        if (key != null && key != lastSelectionKey) {
+            performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+            lastSelectionKey = key
         }
         invalidate()
     }

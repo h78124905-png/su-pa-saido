@@ -173,6 +173,13 @@ class MainActivity : ComponentActivity() {
                         ValueSlider("中央アクション領域", settings.actionRadiusDp, 40, 220, "dp") {
                             save(settings.copy(actionRadiusDp = it))
                         }
+                        ValueSlider("2段目との間隔", settings.tierSpacingDp, 48, 180, "dp") {
+                            save(settings.copy(tierSpacingDp = it))
+                        }
+                        ValueSlider("扇の上下位置", settings.fanVerticalOffsetDp, -160, 160, "dp") {
+                            save(settings.copy(fanVerticalOffsetDp = it))
+                        }
+                        Text("6スロットなら開き角150°前後が狙いやすい設定です。上下位置0dpでは、スワイプ開始位置がそのまま扇の頂点になります。", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
 
                     ExpressiveSectionCard("アプリ配置", Icons.Default.Apps) {
