@@ -464,7 +464,6 @@ class FanSlotPickerView(
     private fun drawCenterActions(c: android.graphics.Canvas) {
         val actions = mutableListOf<String>()
         if (settings.showScreenshot) actions += "写真"
-        if (settings.showTranslate) actions += "翻訳"
         if (actions.isEmpty()) return
 
         val centerX = vertexX + (if (settings.edge == EdgeSide.RIGHT) -1 else 1) * minOf(dp(30).toFloat(), previewRadius * .28f)

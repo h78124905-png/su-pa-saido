@@ -98,7 +98,6 @@ class FanLauncherView(context: Context, private val settings: FanSettings) : Vie
     private fun actionList(): List<FanAction> {
         val result = mutableListOf<FanAction>()
         if (settings.showScreenshot) result += FanAction.Screenshot
-        if (settings.showTranslate) result += FanAction.Translate
         return result
     }
 
