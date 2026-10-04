@@ -381,7 +381,7 @@ class FanSlotPickerView(
         drawCenterActions(c)
 
         paint.style = android.graphics.Paint.Style.FILL
-        paint.color = AndroidAndroidColor.DKGRAY
+        paint.color = AndroidColor.DKGRAY
         paint.textAlign = android.graphics.Paint.Align.CENTER
         paint.textSize = dp(12).toFloat()
         c.drawText(if (settings.edge == EdgeSide.RIGHT) "右端から開く" else "左端から開く",
@@ -463,7 +463,7 @@ class FanSlotPickerView(
             c.drawCircle(centerX, centerY - dp(24), dp(20).toFloat(), paint)
             paint.color = 0xFF00897B.toInt()
             c.drawCircle(centerX, centerY + dp(24), dp(20).toFloat(), paint)
-            paint.color = AndroidAndroidColor.WHITE; paint.textSize = dp(9).toFloat()
+            paint.color = AndroidColor.WHITE; paint.textSize = dp(9).toFloat()
             c.drawText("写真", centerX, centerY - dp(21), paint)
             c.drawText("翻訳", centerX, centerY + dp(27), paint)
         } else {
