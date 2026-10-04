@@ -17,7 +17,7 @@ class EdgeOverlayView(context:Context,private val settings:FanSettings):View(con
         val p=Paint(Paint.ANTI_ALIAS_FLAG).apply{color=Color.WHITE}
         val top=topPx().toFloat();val bottom=bottomPx().toFloat();val rad=14f*density;val path=Path()
         if(settings.edge==EdgeSide.RIGHT){
-            path.moveTo(0f,top);path.lineTo(width-rad,top);path.quadTo(width,top,width,top+rad);path.lineTo(width,bottom-rad);path.quadTo(width,bottom,width-rad,bottom);path.lineTo(0f,bottom)
+            path.moveTo(0f,top);path.lineTo(width-rad,top);path.quadTo(width.toFloat(),top,width.toFloat(),top+rad);path.lineTo(width.toFloat(),bottom-rad);path.quadTo(width.toFloat(),bottom,width.toFloat()-rad,bottom);path.lineTo(0f,bottom)
         }else{
             path.moveTo(width.toFloat(),top);path.lineTo(rad,top);path.quadTo(0f,top,0f,top+rad);path.lineTo(0f,bottom-rad);path.quadTo(0f,bottom,rad,bottom);path.lineTo(width.toFloat(),bottom)
         }
