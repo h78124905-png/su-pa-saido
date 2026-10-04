@@ -9,7 +9,6 @@ import android.widget.*
 import kotlin.math.*
 import android.content.ComponentName
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.net.Uri
@@ -87,10 +86,7 @@ class MainActivity : ComponentActivity() {
                                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         },
-                        navigationIcon = {
-                            Icon(Icons.Default.Widgets, contentDescription = null,
-                                modifier = Modifier.padding(start = 16.dp))
-                        }
+                        navigationIcon = { Text("◆", modifier = Modifier.padding(start = 16.dp)) }
                     )
                 }
             ) { padding ->
