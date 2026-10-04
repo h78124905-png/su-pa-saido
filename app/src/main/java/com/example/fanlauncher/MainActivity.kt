@@ -160,8 +160,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-
-        }
     }
 
     @Composable
@@ -256,7 +254,7 @@ class FanSlotPickerView(
     fun updateSettings(newSettings: FanSettings){settings=newSettings;invalidate()}
     override fun onSizeChanged(w:Int,h:Int,oldW:Int,oldH:Int){
         vertexX=if(settings.edge==EdgeSide.RIGHT)w*.96f else w*.04f;vertexY=h*.90f
-        rx=min(w*.88f,dp(settings.fanWidthDp));ry=min(h*.78f,dp(settings.fanHeightDp))
+        rx=min(w*.88f,dp(settings.fanWidthDp).toFloat());ry=min(h*.78f,dp(settings.fanHeightDp).toFloat())
     }
     private fun pAt(xr:Float,yr:Float,a:Float):FloatArray{val r=Math.toRadians(a.toDouble());return floatArrayOf(vertexX+xr*cos(r).toFloat(),vertexY+yr*sin(r).toFloat())}
     private fun bounds():FloatArray{val a=.18f;val b1=a+(1f-a)*settings.tier1Ratio/100f;val b2=b1+(1f-a)*settings.tier2Ratio/100f;return floatArrayOf(a,b1,b2,1f)}
