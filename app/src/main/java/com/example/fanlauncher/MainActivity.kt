@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
         }
 
         MaterialTheme(
-            colorScheme = expressiveLightColors(),
+            colorScheme = expressiveDarkColors(),
             shapes = Shapes(
                 extraSmall = RoundedCornerShape(8.dp),
                 small = RoundedCornerShape(14.dp),
@@ -247,15 +247,28 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun expressiveLightColors() = if (Build.VERSION.SDK_INT >= 31) {
-        dynamicLightColorScheme(this)
-    } else {
-        lightColorScheme(
-            primary = Color(0xFF6750A4),
-            secondary = Color(0xFF625B71),
-            tertiary = Color(0xFF7D5260)
-        )
-    }
+    private fun expressiveDarkColors() = darkColorScheme(
+        primary = Color(0xFFD0BCFF),
+        onPrimary = Color(0xFF381E72),
+        primaryContainer = Color(0xFF4F378B),
+        onPrimaryContainer = Color(0xFFEADDFF),
+        secondary = Color(0xFFCCC2DC),
+        onSecondary = Color(0xFF332D41),
+        secondaryContainer = Color(0xFF4A4458),
+        onSecondaryContainer = Color(0xFFE8DEF8),
+        tertiary = Color(0xFFEFB8C8),
+        onTertiary = Color(0xFF492532),
+        tertiaryContainer = Color(0xFF633B48),
+        onTertiaryContainer = Color(0xFFFFD8E4),
+        background = Color.Black,
+        onBackground = Color(0xFFE6E1E5),
+        surface = Color.Black,
+        onSurface = Color(0xFFE6E1E5),
+        surfaceVariant = Color(0xFF171717),
+        onSurfaceVariant = Color(0xFFC9C4D0),
+        outline = Color(0xFF938F99),
+        outlineVariant = Color(0xFF47444C)
+    )
 
     @Composable
     private fun ExpressiveSectionCard(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector, content: @Composable ColumnScope.() -> Unit) {
@@ -347,7 +360,7 @@ class FanSlotPickerView(
 
     init {
         isClickable = true
-        setBackgroundColor(0xFFF7F7F7.toInt())
+        setBackgroundColor(AndroidColor.BLACK)
     }
 
     fun updateSettings(newSettings: FanSettings) {
@@ -381,14 +394,14 @@ class FanSlotPickerView(
         drawCenterActions(c)
 
         paint.style = android.graphics.Paint.Style.FILL
-        paint.color = AndroidColor.DKGRAY
+        paint.color = AndroidColor.WHITE
         paint.textAlign = android.graphics.Paint.Align.CENTER
         paint.textSize = dp(12).toFloat()
         c.drawText(if (settings.edge == EdgeSide.RIGHT) "右端から開く" else "左端から開く",
             vertexX, dp(22).toFloat(), paint)
 
         paint.textSize = dp(11).toFloat()
-        paint.color = 0xFF555555.toInt()
+        paint.color = 0xFFBDBDBD.toInt()
         c.drawText("青：1段目", width / 2f, height - dp(30).toFloat(), paint)
         if (settings.tiers == 2) c.drawText("橙：2段目", width / 2f, height - dp(12).toFloat(), paint)
     }
